@@ -1,95 +1,126 @@
 package com.erciyes.edu.tr.trafficlightdensity.brain;
 
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 
 import java.util.*;
+import java.util.function.Consumer;
 
-//	Simülasyonu başlatma/durdurma/sıfırlama kontrollerini sağlar.
 public class SimulationManager {
 
-    private TrafficController trafficController;
-    private CycleManager cycleManager;
-    private Timer timer;
+    private final TrafficController trafficController = new TrafficController();
+    private final CycleManager cycleManager = new CycleManager(trafficController);
 
+    private Timeline countdownTimeline;
 
     private boolean isAutoMode = false;
     private boolean isRunning = false;
 
+    // 👇 GUI'ye bilgi vermek için
+    private Consumer<Integer> onTick;
+    private Consumer<Direction> onPhaseChange;
 
-    public void startSimulation()
-    {
-        if(isRunning) return;
-
-        isRunning=true;
-        cycleManager.startCycle();
-
-        int duration = cycleManager.getCurrentDuration();
-        startTimer(duration);
+    public void setOnTick(Consumer<Integer> tickCallback) {
+        this.onTick = tickCallback;
     }
 
-    private void startTimer(int durationInSeconds) {
-        if (timer != null) {
-            timer.cancel();
+    public void setOnPhaseChange(Consumer<Direction> phaseCallback) {
+        this.onPhaseChange = phaseCallback;
+    }
+
+    public void startSimulation() {
+        
+        if (isRunning) return;
+
+        isRunning = true;
+        cycleManager.startCycle();
+
+        Direction current = cycleManager.getCurrentDirection();
+        int duration = cycleManager.getCurrentDuration();
+
+        if (onPhaseChange != null) onPhaseChange.accept(current);
+        startCountdown(duration, current);
+    }
+
+    private void startCountdown(int durationInSeconds, Direction direction) {
+        if (countdownTimeline != null) {
+            countdownTimeline.stop();
         }
 
-        timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                onCycleComplete();
-            }
-        }, durationInSeconds * 1000);
+        final int[] kalan = {durationInSeconds};
+        if (onTick != null) onTick.accept(kalan[0]);
+
+        countdownTimeline = new Timeline(
+                new KeyFrame(Duration.seconds(1), e -> {
+                    kalan[0]--;
+                    if (onTick != null && kalan[0] >= 0) onTick.accept(kalan[0]);
+
+                    if (kalan[0] < 0) {
+                        countdownTimeline.stop();
+                        onCycleComplete();
+                    }
+                })
+        );
+        countdownTimeline.setCycleCount(durationInSeconds + 1);
+        countdownTimeline.play();
     }
 
     private void onCycleComplete() {
         if (!isRunning) return;
 
-        // Eğer araç kaldıysa: Aynı yönde kal
         if (cycleManager.hasRemainingVehicle()) {
-            startTimer(cycleManager.getCurrentDuration());
+            int duration = cycleManager.getCurrentDuration();
+            Direction direction = cycleManager.getCurrentDirection();
+            if (onPhaseChange != null) onPhaseChange.accept(direction);
+            startCountdown(duration, direction);
             return;
         }
 
-        // Araç kalmadıysa sıradaki yöne geç
         cycleManager.switchToNextDirection();
-        startTimer(cycleManager.getCurrentDuration());
+        Direction newDir = cycleManager.getCurrentDirection();
+        int newDuration = cycleManager.getCurrentDuration();
 
-        // Eğer manuel moddaysak sadece 1 cycle çalıştır ve dur
+        if (onPhaseChange != null) onPhaseChange.accept(newDir);
+        startCountdown(newDuration, newDir);
+
         if (!isAutoMode) {
             stopSimulation();
         }
     }
+
     public void stopSimulation() {
         if (!isRunning) return;
 
         isRunning = false;
         isAutoMode = false;
 
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
+        if (countdownTimeline != null) {
+            countdownTimeline.stop();
+            countdownTimeline = null;
         }
 
-        // (İleride GUI reset komutu buraya yazılabilir)
         System.out.println("Simülasyon durduruldu.");
     }
+
     public void startAutoMode() {
         if (isRunning) return;
 
         isAutoMode = true;
 
-        // Rastgele veri üret (örnek olarak sabit random burada, Sensor sınıfı eklenince değişir)
         Map<Direction, Integer> randomCounts = new HashMap<>();
         Random rand = new Random();
         for (Direction dir : Direction.values()) {
-            randomCounts.put(dir, rand.nextInt(30)); // 0–29 arası random araç
+            randomCounts.put(dir, rand.nextInt(30));
         }
 
         trafficController.setVehicleCounts(randomCounts);
-        trafficController.updateDurations(); // total + green hesaplaması
+        trafficController.updateDurations();
 
         startSimulation();
     }
+
     public void startManualMode(Map<Direction, Integer> manualCounts) {
         if (isRunning) return;
 
@@ -100,6 +131,4 @@ public class SimulationManager {
 
         startSimulation();
     }
-
-
 }

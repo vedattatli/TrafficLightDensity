@@ -11,6 +11,9 @@ public class CycleManager {
     Direction activeDirection;
     TrafficController trafficController = new TrafficController();
 
+    public CycleManager(TrafficController trafficController) {
+    }
+
     public void startCycle()
     {
         directionOrder = List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST);
@@ -50,5 +53,6 @@ public class CycleManager {
             return false;
         }
     }
+
 
 }
