@@ -16,6 +16,15 @@ public class TrafficController {
 
     private int totalVehicleCount = 0;
 
+    /**
+     * TrafficController constructor.
+     * vehicleCount ve greenDurations map'lerini başlatır.
+     */
+    public TrafficController() {
+        this.vehicleCount = new HashMap<>(); // vehicleCount map'ini burada başlatın
+        this.greenDurations = new HashMap<>(); // greenDurations map'ini de burada başlatın
+    }
+
     public int getGreenDuration(Direction direction) {
         return greenDurations.getOrDefault(direction, 0);
     }
@@ -30,24 +39,29 @@ public class TrafficController {
 
     private int calculateTotalVehicleCount() {
         totalVehicleCount = 0; // yeniden hesaplamaya başlarken sıfırla
-        for (int count : vehicleCount.values()) {
-            totalVehicleCount += count;
+        if (vehicleCount != null) { // vehicleCount null değilse döngüye gir
+            for (int count : vehicleCount.values()) {
+                totalVehicleCount += count;
+            }
         }
         return totalVehicleCount;
     }
 
     private void calculateGreenDurations() {
-        greenDurations = new HashMap<>();
+        greenDurations = new HashMap<>(); // Her hesaplamada sıfırdan oluşturmak daha güvenli olabilir.
 
-        if (totalVehicleCount == 0) {
-            for (Direction direction : vehicleCount.keySet()) {
-                greenDurations.put(direction, 0); // hiç yeşil yanmasın
+        if (totalVehicleCount == 0 || vehicleCount == null || vehicleCount.isEmpty()) { // vehicleCount null veya boş ise kontrol et
+            // Eğer vehicleCount başlangıçta boşsa (örneğin rastgele mod için henüz set edilmediyse)
+            // ve kullanıcı girişiyle de doldurulmadıysa, tüm yönlere 0 süresi ata.
+            // Bu durum, Direction.values() kullanılarak tüm olası yönler için yapılabilir.
+            for (Direction direction : Direction.values()) { // Enum'daki tüm yönler için
+                greenDurations.put(direction, 0);
             }
             return;
         }
 
         for (Direction direction : vehicleCount.keySet()) {
-            int count = vehicleCount.get(direction);
+            int count = vehicleCount.getOrDefault(direction, 0); // NullPointer'dan kaçınmak için getOrDefault
             int duration = (int) ((count / (double) totalVehicleCount) * (TOTAL_CYCLE_TIME - 4 * YELLOW_DURATION));
             greenDurations.put(direction, duration);
         }
