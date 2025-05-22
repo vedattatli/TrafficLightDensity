@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.effect.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane centerShape="false" prefHeight="642.0" prefWidth="1091.0" scaleShape="false" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.erciyes.edu.tr.trafficlightdensity.intersection_gui.UserInterfaceController">
+    <top>
+        <VBox fx:id="topVBox" prefHeight="118.0" prefWidth="1091.0" BorderPane.alignment="CENTER">
+            <children>
+                <Label alignment="TOP_CENTER" prefHeight="36.0" prefWidth="952.0" text="🚦 Trafik Işıkları Simülasyonu" textAlignment="CENTER" textFill="#07f265" textOverrun="CENTER_ELLIPSIS">
+                    <font>
+                        <Font name="Californian FB Bold" size="19.0" />
+                    </font>
+                </Label>
+                <HBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="56.0" prefWidth="887.0" spacing="25.0">
+                    <children>
+                        <Label alignment="TOP_CENTER" contentDisplay="TEXT_ONLY" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="24.0" prefWidth="248.0" text="Lütfen seçiminizi yapınız:" textAlignment="CENTER">
+                            <font>
+                                <Font name="Arial" size="18.0" />
+                            </font>
+                            <effect>
+                                <Lighting>
+                                    <bumpInput>
+                                        <Shadow />
+                                    </bumpInput>
+                                    <light>
+                                        <Light.Distant />
+                                    </light>
+                                </Lighting>
+                            </effect>
+                        </Label>
+                        <Button fx:id="random_select_button" mnemonicParsing="false" onAction="#onRandomSelect" prefHeight="42.0" prefWidth="277.0" text="Random Sayıda Araç Gelsin" textFill="#75a2ff">
+                            <font>
+                                <Font name="System Bold" size="19.0" />
+                            </font>
+                        </Button>
+                        <Button fx:id="user_input_button" mnemonicParsing="false" onAction="#onUserInputSelect" prefHeight="42.0" prefWidth="266.0" text="Araç Sayısını Giriniz" textFill="#75a2ff">
+                            <font>
+                                <Font name="System Bold" size="19.0" />
+                            </font>
+                        </Button>
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+    </top>
+    <center>
+        <AnchorPane fx:id="mainPane" BorderPane.alignment="CENTER">
+            <children>
+                <Rectangle fx:id="west_up_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="85.0" layoutX="-3.0" layoutY="147.0" stroke="BLACK" strokeType="INSIDE" width="508.0" />
+                <Rectangle fx:id="east_up_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="85.0" layoutX="662.0" layoutY="147.0" stroke="BLACK" strokeType="INSIDE" width="552.0" />
+                <Rectangle fx:id="nort_left_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="157.0" layoutX="498.0" layoutY="-11.0" stroke="BLACK" strokeType="INSIDE" width="85.0" />
+                <Rectangle fx:id="south_left_way" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="200.0" layoutX="498.0" layoutY="310.0" stroke="BLACK" strokeType="INSIDE" width="85.0" />
+                <Rectangle fx:id="south_right_way" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="200.0" layoutX="579.0" layoutY="310.0" stroke="BLACK" strokeType="INSIDE" width="85.0" />
+                <Rectangle fx:id="nort_right_way" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="157.0" layoutX="583.0" layoutY="-11.0" stroke="BLACK" strokeType="INSIDE" width="85.0" />
+                <Rectangle fx:id="east_bottom_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="85.0" layoutX="659.0" layoutY="232.0" stroke="BLACK" strokeType="INSIDE" width="555.0" />
+                <Rectangle fx:id="west_bottom_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="85.0" layoutX="-4.0" layoutY="227.0" stroke="BLACK" strokeType="INSIDE" width="508.0" />
+                <VBox alignment="CENTER" layoutX="454.0" layoutY="14.0" prefHeight="126.0" prefWidth="44.0" spacing="4.0">
+                    <children>
+                        <Label fx:id="northTimerLabel" prefHeight="30.0" prefWidth="50.0" text="SAYAÇ">
+                            <font>
+                                <Font size="14.0" />
+                            </font>
+                        </Label>
+                        <Circle fill="#0fea50" layoutX="24.0" layoutY="52.0" radius="14.0" stroke="BLACK" strokeType="INSIDE" />
+                        <Circle fill="#dbff1f" layoutX="24.0" layoutY="24.0" radius="14.0" stroke="#4a08ff" strokeType="INSIDE" />
+                        <Circle fill="#ff1f1f" radius="14.0" stroke="BLACK" strokeType="INSIDE" />
+                    </children>
+                </VBox>
+                <VBox alignment="CENTER" layoutX="659.0" layoutY="317.0" prefHeight="129.0" prefWidth="45.0" spacing="4.0">
+                    <children>
+                        <Circle fill="#ff1f1f" radius="14.0" stroke="BLACK" strokeType="INSIDE" />
+                        <Circle fill="#dbff1f" layoutX="24.0" layoutY="24.0" radius="14.0" stroke="#4a08ff" strokeType="INSIDE" />
+                        <Circle fill="#0fea50" layoutX="24.0" layoutY="52.0" radius="14.0" stroke="BLACK" strokeType="INSIDE" />
+                        <Label fx:id="southTimerLabel" prefHeight="30.0" prefWidth="50.0" text="SAYAÇ">
+                            <font>
+                                <Font size="14.0" />
+                            </font>
+                        </Label>
+                    </children>
+                </VBox>
+                <HBox alignment="CENTER" layoutX="668.0" layoutY="112.0" prefHeight="34.0" prefWidth="138.0" spacing="2.0">
+                    <children>
+                        <Circle fill="#ff1f1f" radius="14.0" stroke="BLACK" strokeType="INSIDE" />
+                        <Circle fill="#dbff1f" radius="14.0" stroke="#4a08ff" strokeType="INSIDE" />
+                        <Circle fill="#0fea50" radius="14.0" stroke="BLACK" strokeType="INSIDE" />
+                        <Label fx:id="eastTimerLabel" prefHeight="30.0" prefWidth="50.0" text="SAYAÇ">
+                            <font>
+                                <Font size="14.0" />
+                            </font>
+                        </Label>
+                    </children>
+                </HBox>
+                <HBox alignment="CENTER" layoutX="360.0" layoutY="312.0" prefHeight="34.0" prefWidth="138.0" spacing="2.0">
+                    <children>
+                        <Label fx:id="westTimerLabel" prefHeight="30.0" prefWidth="50.0" text="SAYAÇ">
+                            <font>
+                                <Font size="14.0" />
+                            </font>
+                        </Label>
+                        <Circle fill="#0fea50" radius="14.0" stroke="BLACK" strokeType="INSIDE" />
+                        <Circle fill="#dbff1f" radius="14.0" stroke="#4a08ff" strokeType="INSIDE" />
+                        <Circle fill="#ff1f1f" radius="14.0" stroke="BLACK" strokeType="INSIDE" />
+                    </children>
+                </HBox>
+            </children></AnchorPane>
+    </center>
+    <bottom>
+        <HBox alignment="CENTER_LEFT" prefHeight="91.0" prefWidth="1091.0" spacing="20.0" BorderPane.alignment="TOP_LEFT">
+            <children>
+                <Button fx:id="startButton" mnemonicParsing="false" onAction="#onStartSimulation" prefHeight="40.0" prefWidth="151.0" text="Başla" textFill="#0fa12f">
+                    <font>
+                        <Font size="18.0" />
+                    </font></Button>
+                <Button fx:id="pauseButton" mnemonicParsing="false" onAction="#onPauseSimulation" prefHeight="40.0" prefWidth="152.0" text="Durdur" textFill="RED">
+                    <font>
+                        <Font size="18.0" />
+                    </font>
+                </Button>
+                <Button fx:id="rerunButton" mnemonicParsing="false" onAction="#onRerunSimulation" prefHeight="40.0" prefWidth="152.0" text="Yeniden Başlat" textFill="#c70bae">
+                    <font>
+                        <Font size="18.0" />
+                    </font>
+                </Button>
+            </children>
+        </HBox>
+    </bottom>
+</BorderPane>
