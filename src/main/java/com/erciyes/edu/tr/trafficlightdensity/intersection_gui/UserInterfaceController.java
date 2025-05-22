@@ -10,103 +10,82 @@ import javafx.scene.layout.VBox;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.event.ActionEvent;
-// Kullanılmayan importlar kaldırıldı
 import java.util.List;
 import java.util.Optional;
 
 public class UserInterfaceController {
-    // Arayüz buton vs. burda çizilecek
-    // private Timeline countdownTimeline; // UserInterfaceController'da Timeline'a gerek yok
     TrafficController trafficController = new TrafficController();
     SimulationManager simulationManager = new SimulationManager();
-    boolean isRandom; // Hangi modun seçildiğini tutar (true ise rastgele, false ise manuel)
-    boolean simulationIsCurrentlyPaused = false; // Simülasyonun duraklatılma durumunu tutar
+    VehicleAnimation vehicleAnimator; // VehicleAnimation nesnesi eklendi
 
-    @FXML
-    private Pane mainPane;
+    boolean isRandom;
+    boolean simulationIsCurrentlyPaused = false;
 
-    @FXML
-    private Button random_select_button;
+    @FXML private Pane mainPane;
+    @FXML private Button random_select_button;
+    @FXML private Button user_input_button;
+    @FXML private Button startButton;
+    @FXML private Button pauseButton;
+    @FXML private Button rerunButton;
+    @FXML private Label northTimerLabel, southTimerLabel, eastTimerLabel, westTimerLabel;
+    @FXML private VBox topVBox;
 
-    @FXML
-    private Button user_input_button;
-
-    @FXML
-    private Button startButton;
-
-    @FXML
-    private Button pauseButton;
-
-    @FXML
-    private Button rerunButton; // Reset butonu
-
-    @FXML
-    private Label northTimerLabel, southTimerLabel, eastTimerLabel, westTimerLabel;
-
-    @FXML
-    private VBox topVBox; // Giriş seçme butonlarını içeren VBox
-
-    private Direction currentDirectionForLabelUpdate; // Sadece label güncellemesi için aktif yön
+    private Direction currentDirectionForLabelUpdate;
 
     public void initialize() {
-        // Başlangıç UI durumu ve bayrakların sıfırlanması
+        vehicleAnimator = new VehicleAnimation(simulationManager); // VehicleAnimation başlatılır
+
         topVBox.setVisible(true);
         mainPane.setVisible(false);
         startButton.setVisible(false);
         pauseButton.setVisible(false);
         rerunButton.setVisible(false);
-        resetTimerLabels(); // Labelları başlangıç durumuna getir
+        resetTimerLabels();
 
-        isRandom = false; // Başlangıçta bir mod seçilmemiş
-        simulationIsCurrentlyPaused = false; // Simülasyon başlangıçta duraklatılmış değil
-        pauseButton.setText("Pause"); // Pause butonunun metnini "Pause" yap
+        isRandom = false;
+        simulationIsCurrentlyPaused = false;
+        pauseButton.setText("Pause");
 
-        // SimulationManager'dan gelen tick (süre) bilgilerini dinle
         simulationManager.setOnTick(kalanSure -> {
             if (this.currentDirectionForLabelUpdate != null) {
                 labeliGuncelle(this.currentDirectionForLabelUpdate, kalanSure);
             } else {
-                // Aktif yön yoksa (örn. simülasyon durmuş veya henüz başlamamışsa) labelları temizle
                 resetTimerLabels();
             }
         });
 
-        // SimulationManager'dan gelen faz (yön) değişikliği bilgilerini dinle
-        simulationManager.setOnPhaseChange(direction -> {
-            this.currentDirectionForLabelUpdate = direction; // Aktif yönü sakla
-            // Faz değiştiğinde, ilk tick gelene kadar label'da eski süre kalmasın diye
-            // eğer yeni yön null değilse ve süre biliniyorsa label'ı güncelleyebiliriz.
-            // Ancak onTick zaten ilk değeri basacağı için genellikle gerek kalmaz.
-            // if (direction != null) {
-            // labeliGuncelle(direction, trafficController.getGreenDuration(direction));
-            // }
+        // onPhaseChange -> onPhaseInfoChange olarak SimulationManager'da değiştirilmişti, burada da güncelleyelim.
+        simulationManager.setOnPhaseInfoChange(direction -> { // 'direction' burada Yeşil veya Sarı olan yön
+            this.currentDirectionForLabelUpdate = direction;
+            if (direction == null) { // Simülasyon durduysa veya hata varsa
+                resetTimerLabels();
+            }
+            // Işık renklerini de güncellemek için (Yeşil, Sarı, Kırmızı gösterimi)
+            // burada her bir label'ın rengini de SimulationManager'dan alacağımız
+            // LightPhase bilgisine göre ayarlayabiliriz. Bu kısım eklenmedi.
         });
     }
 
     @FXML
     private void onRandomSelect(ActionEvent e) {
         isRandom = true;
-        // UI'ı simülasyon ekranına geçir
         topVBox.setVisible(false);
         mainPane.setVisible(true);
         startButton.setVisible(true);
         pauseButton.setVisible(true);
         rerunButton.setVisible(true);
-        startButton.setDisable(false); // Başlat butonu tıklanabilir olsun
+        startButton.setDisable(false);
+        resetTimerLabels();
         System.out.println("Rastgele araç sayısı modu seçildi.");
-        // Araç sayıları ve süreler "Start" butonuna basılınca SimulationManager.startAutoMode içinde hesaplanacak.
-        // O yüzden burada labelSureleriniGuncelle() çağırmak yerine resetTimerLabels() daha doğru olabilir
-        // ya da Start'a basılana kadar bir şey göstermeyebilir. Şimdilik böyle kalsın, Start'ta güncellenir.
-        resetTimerLabels(); // Ya da bir "Hazır" mesajı gösterilebilir
     }
 
     @FXML
     private void onUserInputSelect(ActionEvent e) {
         isRandom = false;
-        trafficController.getVehicleCounts().clear(); // Önceki girişleri temizle
+        trafficController.getVehicleCounts().clear();
 
         for (Direction yon : List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)) {
-            TextInputDialog dialog = new TextInputDialog("0"); // Varsayılan değer 0 olsun
+            TextInputDialog dialog = new TextInputDialog("5"); // Varsayılan 5 araç olsun
             dialog.setTitle("Araç Girişi");
             dialog.setHeaderText(yon.getTurkishName() + " yönü için araç sayısı:");
             dialog.setContentText("Sayı:");
@@ -114,56 +93,71 @@ public class UserInterfaceController {
             if (sonuc.isPresent() && !sonuc.get().trim().isEmpty()) {
                 try {
                     int sayi = Integer.parseInt(sonuc.get().trim());
-                    trafficController.getVehicleCounts().put(yon, Math.max(0, sayi)); // Negatifse 0 ata
+                    trafficController.getVehicleCounts().put(yon, Math.max(0, sayi));
                 } catch (NumberFormatException ex) {
-                    System.err.println("Geçersiz sayı formatı: " + sonuc.get() + ". " + yon.getTurkishName() + " için 0 araç atandı.");
                     trafficController.getVehicleCounts().put(yon, 0);
                 }
             } else {
-                System.out.println(yon.getTurkishName() + " yönü için giriş yapılmadı veya iptal edildi. 0 araç atandı.");
-                trafficController.getVehicleCounts().put(yon, 0); // Boş veya iptal durumunda 0 ata
+                trafficController.getVehicleCounts().put(yon, 0);
             }
         }
-        trafficController.updateDurations(); // Girilen sayılara göre süreleri hesapla
-        labelSureleriniGuncelle(); // Hesaplanan süreleri GUI'de göster
+        trafficController.updateDurations();
+        labelSureleriniGuncelle();
 
-        // UI'ı simülasyon ekranına geçir
         topVBox.setVisible(false);
         mainPane.setVisible(true);
         startButton.setVisible(true);
         pauseButton.setVisible(true);
         rerunButton.setVisible(true);
-        startButton.setDisable(false); // Başlat butonu tıklanabilir olsun
+        startButton.setDisable(false);
         System.out.println("Manuel araç sayısı modu seçildi ve veriler girildi.");
     }
 
     @FXML
     private void onStartSimulation(ActionEvent e) {
         System.out.println("Simülasyon başlatılıyor...");
-        simulationIsCurrentlyPaused = false; // Simülasyon başlarken duraklatılmış değil
-        pauseButton.setText("Pause");   // Pause buton metnini ayarla
-        startButton.setDisable(true);   // Başlat butonunu pasif yap (tekrar basılmasın)
+        simulationIsCurrentlyPaused = false;
+        pauseButton.setText("Pause");
+        startButton.setDisable(true);
+
+        // Araçları oluştur ve animasyonu başlat
+        vehicleAnimator.initializeVehicles(trafficController, mainPane); // mainPane'i parametre olarak ver
+        vehicleAnimator.startAnimation();
 
         if (isRandom) {
-            simulationManager.startAutoMode();
-        } else { // Manuel mod (!isRandom)
-            simulationManager.startManualMode(trafficController.getVehicleCounts());
+            simulationManager.startAutoMode(); // Bu metod içinde trafficController'a rastgele sayılar atanıyor
+            // ve sonra initializeVehicles bu sayıları kullanıyor. Sıralama önemli.
+            // Önce startAutoMode/ManualMode çağrılıp TC güncellenmeli, sonra initializeVehicles.
+            // Düzeltilmiş sıralama:
         }
+        // else { // Manuel mod (!isRandom)
+        // trafficController zaten onUserInputSelect'te güncellendi.
+        // }
+        // Önce SimulationManager modunu başlatıp TrafficController'ı ayarlayalım, SONRA araçları initialize edelim.
+        if (isRandom) {
+            simulationManager.startAutoMode(); // Bu, trafficController'ı günceller
+        } else {
+            simulationManager.startManualMode(trafficController.getVehicleCounts()); // Bu, trafficController'ı günceller
+        }
+        vehicleAnimator.initializeVehicles(trafficController, mainPane); // Güncel trafficController ile araçları oluştur
+        vehicleAnimator.startAnimation(); // Animasyonu başlat
     }
 
     @FXML
     private void onPauseSimulation(ActionEvent e) {
-        if (!simulationManager.isRunning()) { // Simülasyon hiç başlamamışsa veya bitmişse
+        if (!simulationManager.isRunning()) {
             System.out.println("Pause: Simülasyon çalışmıyor.");
             return;
         }
 
         if (simulationIsCurrentlyPaused) {
             simulationManager.resumeSimulation();
+            vehicleAnimator.startAnimation(); // Animasyonu da devam ettir
             pauseButton.setText("Pause");
             simulationIsCurrentlyPaused = false;
         } else {
             simulationManager.pauseSimulation();
+            vehicleAnimator.stopAnimation(); // Animasyonu da duraklat (durdur)
             pauseButton.setText("Resume");
             simulationIsCurrentlyPaused = true;
         }
@@ -172,19 +166,13 @@ public class UserInterfaceController {
     @FXML
     private void onRerunSimulation(ActionEvent e) { // Reset butonu
         System.out.println("Simülasyon sıfırlanıyor (Reset)...");
-        simulationManager.stopSimulation(); // Çalışan simülasyonu ve iç durumlarını durdur/sıfırla
+        simulationManager.stopSimulation(); // Beyin simülasyonunu durdur
+        vehicleAnimator.clearAllVehicles();   // Araçları ve animasyonu temizle/durdur
 
-        // TODO: Araç animasyonları varsa buradan temizlenmeli.
-        // Örnek: if (vehicleAnimator != null) vehicleAnimator.clearAllVisuals(mainPane);
-        // Ya da mainPane'e doğrudan eklenen araç node'ları varsa:
-        // mainPane.getChildren().removeIf(node -> node instanceof VehicleView);
+        trafficController.getVehicleCounts().clear();
+        trafficController.updateDurations();
 
-        trafficController.getVehicleCounts().clear(); // Araç sayılarını sıfırla
-        trafficController.updateDurations();          // Süreleri (0 olarak) güncelle
-
-        // UI'ı ve bayrakları başlangıç durumuna getir
-        initialize();
-        // startButton initialize içinde gizlenip, mod seçilince görünür ve aktif hale gelecek.
+        initialize(); // UI ve bayrakları başlangıç durumuna getir
     }
 
     private void labelSureleriniGuncelle() {
@@ -197,7 +185,13 @@ public class UserInterfaceController {
 
     private void labeliGuncelle(Direction aktifYon, int sure) {
         resetTimerLabels();
-        String sureText = (sure >= 0 ? sure : "0") + " sn";
+        if (aktifYon == null) return;
+
+        // Işığın rengini de göstermek için (opsiyonel)
+        // LightPhase phase = simulationManager.getLightPhaseForDirection(aktifYon);
+        // String phaseText = " (" + phase.name().substring(0,1) + ")";
+
+        String sureText = (sure >= 0 ? sure : "0") + " sn"; // + phaseText;
         switch (aktifYon) {
             case NORTH -> northTimerLabel.setText(sureText);
             case SOUTH -> southTimerLabel.setText(sureText);
