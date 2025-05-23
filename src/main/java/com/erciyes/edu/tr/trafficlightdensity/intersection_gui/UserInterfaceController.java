@@ -16,7 +16,7 @@ import java.util.Optional;
 public class UserInterfaceController {
     TrafficController trafficController = new TrafficController();
     SimulationManager simulationManager = new SimulationManager();
-    VehicleAnimation vehicleAnimator; // VehicleAnimation nesnesi eklendi
+    VehicleAnimation vehicleAnimator;
 
     boolean isRandom;
     boolean simulationIsCurrentlyPaused = false;
@@ -120,22 +120,8 @@ public class UserInterfaceController {
         pauseButton.setText("Pause");
         startButton.setDisable(true);
 
-        // Araçları oluştur ve animasyonu başlat
-        vehicleAnimator.initializeVehicles(trafficController, mainPane); // mainPane'i parametre olarak ver
-        vehicleAnimator.startAnimation();
-
         if (isRandom) {
-            simulationManager.startAutoMode(); // Bu metod içinde trafficController'a rastgele sayılar atanıyor
-            // ve sonra initializeVehicles bu sayıları kullanıyor. Sıralama önemli.
-            // Önce startAutoMode/ManualMode çağrılıp TC güncellenmeli, sonra initializeVehicles.
-            // Düzeltilmiş sıralama:
-        }
-        // else { // Manuel mod (!isRandom)
-        // trafficController zaten onUserInputSelect'te güncellendi.
-        // }
-        // Önce SimulationManager modunu başlatıp TrafficController'ı ayarlayalım, SONRA araçları initialize edelim.
-        if (isRandom) {
-            simulationManager.startAutoMode(); // Bu, trafficController'ı günceller
+            simulationManager.startAutoMode();
         } else {
             simulationManager.startManualMode(trafficController.getVehicleCounts()); // Bu, trafficController'ı günceller
         }

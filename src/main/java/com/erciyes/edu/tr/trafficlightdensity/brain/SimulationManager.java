@@ -44,21 +44,13 @@ public class SimulationManager {
     }
 
     public void startSimulation() {
-        if (isRunning && !isPaused) return;
-        if (isRunning && isPaused) stopSimulation(); // Duraklatılmışsa, önce durdur sonra yeniden başlat
 
         isRunning = true;
         isPaused = false;
-        cycleManager.startCycle(); // Döngüyü ve ilk aktif yönü ayarla
+        cycleManager.startCycle();
 
         this.currentlyActiveDirection = cycleManager.getCurrentDirection();
         int greenDuration = cycleManager.getCurrentDuration();
-
-        if (this.currentlyActiveDirection == null) {
-            System.err.println("SimulationManager Hata: Başlatılacak mevcut yön bulunamadı.");
-            stopSimulation();
-            return;
-        }
 
         System.out.println("Simülasyon başlatılıyor: " + this.currentlyActiveDirection.getTurkishName() + " Yeşil Fazı ile.");
         // Diğer tüm ışıkları kırmızı yap, aktif olanı yeşil yap
@@ -81,10 +73,6 @@ public class SimulationManager {
                 }
             }
         }
-        // GUI'yi bu fazın aktif yönü ve süresi hakkında bilgilendir.
-        // onPhaseInfoChange zaten aktif yönü biliyor, onTick süreyi gönderecek.
-        // Belki faz bilgisini de göndermek için onPhaseInfoChange'in imzası değiştirilebilir: onPhaseInfoChange.accept(this.currentlyActiveDirection, phaseForActiveDirection);
-        // Şimdilik UserInterfaceController onTick ve aktif yön bilgisiyle idare edecek.
 
         if (phaseTimeline != null) {
             phaseTimeline.stop();

@@ -51,14 +51,14 @@
         <AnchorPane fx:id="mainPane" BorderPane.alignment="CENTER">
             <children>
                 <Rectangle fx:id="west_up_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="85.0" layoutX="-3.0" layoutY="147.0" stroke="BLACK" strokeType="INSIDE" width="508.0" />
-                <Rectangle fx:id="east_up_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="85.0" layoutX="662.0" layoutY="147.0" stroke="BLACK" strokeType="INSIDE" width="552.0" />
+                <Rectangle fx:id="east_up_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="85.0" layoutX="661.0" layoutY="147.0" stroke="BLACK" strokeType="INSIDE" width="553.0" />
                 <Rectangle fx:id="nort_left_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="157.0" layoutX="498.0" layoutY="-11.0" stroke="BLACK" strokeType="INSIDE" width="85.0" />
                 <Rectangle fx:id="south_left_way" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="200.0" layoutX="498.0" layoutY="310.0" stroke="BLACK" strokeType="INSIDE" width="85.0" />
-                <Rectangle fx:id="south_right_way" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="200.0" layoutX="579.0" layoutY="310.0" stroke="BLACK" strokeType="INSIDE" width="85.0" />
+                <Rectangle fx:id="south_right_way" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="200.0" layoutX="579.0" layoutY="310.0" stroke="BLACK" strokeType="INSIDE" visible="false" width="85.0" />
                 <Rectangle fx:id="nort_right_way" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="157.0" layoutX="583.0" layoutY="-11.0" stroke="BLACK" strokeType="INSIDE" width="85.0" />
                 <Rectangle fx:id="east_bottom_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="85.0" layoutX="659.0" layoutY="232.0" stroke="BLACK" strokeType="INSIDE" width="555.0" />
                 <Rectangle fx:id="west_bottom_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="85.0" layoutX="-4.0" layoutY="227.0" stroke="BLACK" strokeType="INSIDE" width="508.0" />
-                <VBox alignment="CENTER" layoutX="454.0" layoutY="14.0" prefHeight="126.0" prefWidth="44.0" spacing="4.0">
+                <VBox alignment="CENTER" layoutX="446.0" layoutY="14.0" prefHeight="126.0" prefWidth="44.0" spacing="4.0">
                     <children>
                         <Label fx:id="northTimerLabel" prefHeight="30.0" prefWidth="50.0" text="SAYAÇ">
                             <font>
@@ -70,7 +70,7 @@
                         <Circle fill="#ff1f1f" radius="14.0" stroke="BLACK" strokeType="INSIDE" />
                     </children>
                 </VBox>
-                <VBox alignment="CENTER" layoutX="659.0" layoutY="317.0" prefHeight="129.0" prefWidth="45.0" spacing="4.0">
+                <VBox alignment="CENTER" layoutX="674.0" layoutY="317.0" prefHeight="129.0" prefWidth="45.0" spacing="4.0">
                     <children>
                         <Circle fill="#ff1f1f" radius="14.0" stroke="BLACK" strokeType="INSIDE" />
                         <Circle fill="#dbff1f" layoutX="24.0" layoutY="24.0" radius="14.0" stroke="#4a08ff" strokeType="INSIDE" />
@@ -82,7 +82,7 @@
                         </Label>
                     </children>
                 </VBox>
-                <HBox alignment="CENTER" layoutX="668.0" layoutY="112.0" prefHeight="34.0" prefWidth="138.0" spacing="2.0">
+                <HBox alignment="CENTER" layoutX="681.0" layoutY="106.0" prefHeight="34.0" prefWidth="138.0" spacing="2.0">
                     <children>
                         <Circle fill="#ff1f1f" radius="14.0" stroke="BLACK" strokeType="INSIDE" />
                         <Circle fill="#dbff1f" radius="14.0" stroke="#4a08ff" strokeType="INSIDE" />
@@ -94,7 +94,7 @@
                         </Label>
                     </children>
                 </HBox>
-                <HBox alignment="CENTER" layoutX="360.0" layoutY="312.0" prefHeight="34.0" prefWidth="138.0" spacing="2.0">
+                <HBox alignment="CENTER" layoutX="346.0" layoutY="317.0" prefHeight="34.0" prefWidth="138.0" spacing="2.0">
                     <children>
                         <Label fx:id="westTimerLabel" prefHeight="30.0" prefWidth="50.0" text="SAYAÇ">
                             <font>
