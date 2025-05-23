@@ -54,7 +54,7 @@
                 <Rectangle fx:id="east_up_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="85.0" layoutX="661.0" layoutY="147.0" stroke="BLACK" strokeType="INSIDE" width="553.0" />
                 <Rectangle fx:id="nort_left_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="157.0" layoutX="498.0" layoutY="-11.0" stroke="BLACK" strokeType="INSIDE" width="85.0" />
                 <Rectangle fx:id="south_left_way" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="200.0" layoutX="498.0" layoutY="310.0" stroke="BLACK" strokeType="INSIDE" width="85.0" />
-                <Rectangle fx:id="south_right_way" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="200.0" layoutX="579.0" layoutY="310.0" stroke="BLACK" strokeType="INSIDE" visible="false" width="85.0" />
+                <Rectangle fx:id="south_right_way" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="200.0" layoutX="579.0" layoutY="310.0" stroke="BLACK" strokeType="INSIDE" width="85.0" />
                 <Rectangle fx:id="nort_right_way" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="157.0" layoutX="583.0" layoutY="-11.0" stroke="BLACK" strokeType="INSIDE" width="85.0" />
                 <Rectangle fx:id="east_bottom_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="85.0" layoutX="659.0" layoutY="232.0" stroke="BLACK" strokeType="INSIDE" width="555.0" />
                 <Rectangle fx:id="west_bottom_road" arcHeight="5.0" arcWidth="5.0" fill="#2f2f2f" height="85.0" layoutX="-4.0" layoutY="227.0" stroke="BLACK" strokeType="INSIDE" width="508.0" />

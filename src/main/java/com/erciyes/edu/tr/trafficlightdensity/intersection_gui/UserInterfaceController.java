@@ -3,6 +3,7 @@ package com.erciyes.edu.tr.trafficlightdensity.intersection_gui;
 import com.erciyes.edu.tr.trafficlightdensity.brain.SimulationManager;
 import com.erciyes.edu.tr.trafficlightdensity.brain.TrafficController;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
+import com.erciyes.edu.tr.trafficlightdensity.road_objects.LightPhase;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.Pane;
@@ -33,7 +34,7 @@ public class UserInterfaceController {
     private Direction currentDirectionForLabelUpdate;
 
     public void initialize() {
-        vehicleAnimator = new VehicleAnimation(simulationManager); // VehicleAnimation başlatılır
+        vehicleAnimator = new VehicleAnimation(simulationManager);
 
         topVBox.setVisible(true);
         mainPane.setVisible(false);
@@ -54,8 +55,7 @@ public class UserInterfaceController {
             }
         });
 
-        // onPhaseChange -> onPhaseInfoChange olarak SimulationManager'da değiştirilmişti, burada da güncelleyelim.
-        simulationManager.setOnPhaseInfoChange(direction -> { // 'direction' burada Yeşil veya Sarı olan yön
+        simulationManager.setOnPhaseInfoChange(direction -> {
             this.currentDirectionForLabelUpdate = direction;
             if (direction == null) { // Simülasyon durduysa veya hata varsa
                 resetTimerLabels();
@@ -120,13 +120,14 @@ public class UserInterfaceController {
         pauseButton.setText("Pause");
         startButton.setDisable(true);
 
+        vehicleAnimator.initializeVehicles(trafficController, mainPane); // Güncel trafficController ile araçları oluştur
+        vehicleAnimator.startAnimation(); // Animasyonu başlat
+
         if (isRandom) {
             simulationManager.startAutoMode();
         } else {
             simulationManager.startManualMode(trafficController.getVehicleCounts()); // Bu, trafficController'ı günceller
         }
-        vehicleAnimator.initializeVehicles(trafficController, mainPane); // Güncel trafficController ile araçları oluştur
-        vehicleAnimator.startAnimation(); // Animasyonu başlat
     }
 
     @FXML
@@ -174,8 +175,8 @@ public class UserInterfaceController {
         if (aktifYon == null) return;
 
         // Işığın rengini de göstermek için (opsiyonel)
-        // LightPhase phase = simulationManager.getLightPhaseForDirection(aktifYon);
-        // String phaseText = " (" + phase.name().substring(0,1) + ")";
+        LightPhase phase = simulationManager.getLightPhaseForDirection(aktifYon);
+        String phaseText = " (" + phase.name().substring(0,1) + ")";
 
         String sureText = (sure >= 0 ? sure : "0") + " sn"; // + phaseText;
         switch (aktifYon) {
