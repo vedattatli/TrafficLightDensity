@@ -224,10 +224,6 @@ public class SimulationManager {
         this.trafficController.updateDurations();
 
         this.timerDisplay.labelDisplayBaslangic(this.trafficController);
-
-
-
-
         startSimulation();
     }
 
