@@ -63,7 +63,7 @@ public class SimulationManager {
         this.currentlyActiveDirection = cycleManager.getCurrentDirection();
         int greenDuration = cycleManager.getCurrentDuration();
 
-        System.out.println("Simülasyon başlatılıyor: " + this.currentlyActiveDirection.getTurkishName() + " Yeşil Fazı ile.");
+        System.out.println("Simülasyon başlatılıyor: " + this.currentlyActiveDirection+ " Yeşil Fazı ile.");
         // Diğer tüm ışıkları kırmızı yap, aktif olanı yeşil yap
         for (Direction dir : Direction.values()) {
             currentLightPhases.put(dir, (dir == this.currentlyActiveDirection) ? LightPhase.GREEN : LightPhase.RED);
@@ -117,11 +117,11 @@ public class SimulationManager {
 
         if (finishedPhase == LightPhase.GREEN) {
             // Yeşil bitti, aynı yön için Sarı'yı başlat
-            System.out.println(this.currentlyActiveDirection.getTurkishName() + " için Sarı Faz başlıyor.");
+            System.out.println(this.currentlyActiveDirection+ " için Sarı Faz başlıyor.");
             runPhaseTimer((int) LightPhase.getDefaultPhaseDuration(LightPhase.YELLOW).getSeconds(), LightPhase.YELLOW);
         } else if (finishedPhase == LightPhase.YELLOW) {
             // Sarı bitti, bu yönü Kırmızı yap
-            System.out.println(this.currentlyActiveDirection.getTurkishName() + " için Kırmızı Faz başlıyor.");
+            System.out.println(this.currentlyActiveDirection + " için Kırmızı Faz başlıyor.");
             currentLightPhases.put(this.currentlyActiveDirection, LightPhase.RED);
             // Şimdi bir sonraki yönün Yeşil fazına geçmek için döngü mantığını çalıştır
             processNextInCycle();
@@ -150,7 +150,7 @@ public class SimulationManager {
             return;
         }
 
-        System.out.println("Sıradaki Yeşil Faz: " + this.currentlyActiveDirection.getTurkishName() + ", Süre: " + nextGreenDuration + "sn");
+        System.out.println("Sıradaki Yeşil Faz: " + this.currentlyActiveDirection + ", Süre: " + nextGreenDuration + "sn");
         // Diğer tüm ışıkları kırmızı yap, yeni aktif olanı yeşil yap
         for (Direction dir : Direction.values()) {
             currentLightPhases.put(dir, (dir == this.currentlyActiveDirection) ? LightPhase.GREEN : LightPhase.RED);

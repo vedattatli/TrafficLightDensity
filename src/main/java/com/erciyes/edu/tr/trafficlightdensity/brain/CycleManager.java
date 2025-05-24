@@ -30,7 +30,7 @@ public class CycleManager {
         }
         // Konsola başlangıç bilgisini yazdıralım (Türkçe karakterler için getTurkishName() kullanılabilir)
         System.out.println("Döngü başlatıldı. İlk yön: " +
-                (activeDirection != null ? activeDirection.getTurkishName() : "YOK") +
+                (activeDirection != null ? activeDirection: "YOK") +
                 ", Süre: " + getCurrentDuration() + "sn");
     }
 

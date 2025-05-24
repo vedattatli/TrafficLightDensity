@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.effect.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.shape.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.effect.Light.Distant?>
+<?import javafx.scene.effect.Lighting?>
+<?import javafx.scene.effect.Shadow?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.text.Font?>
 
-<BorderPane centerShape="false" prefHeight="642.0" prefWidth="1091.0" scaleShape="false" style="-fx-background-color: skyblue;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.erciyes.edu.tr.trafficlightdensity.intersection_gui.UserInterfaceController">
+<BorderPane centerShape="false" prefHeight="642.0" prefWidth="1091.0" scaleShape="false" style="-fx-background-color: skyblue;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.erciyes.edu.tr.trafficlightdensity.intersection_gui.UserInterfaceController">
     <top>
         <VBox fx:id="topVBox" prefHeight="118.0" prefWidth="1091.0" BorderPane.alignment="CENTER">
             <children>
@@ -65,16 +73,16 @@
                                 <Font size="14.0" />
                             </font>
                         </Label>
-                        <Circle fill="#0fea50" layoutX="24.0" layoutY="52.0" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
-                        <Circle fill="#dbff1f" layoutX="24.0" layoutY="24.0" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="#4a08ff" strokeType="INSIDE" />
-                        <Circle fill="#ff1f1f" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
+                        <Circle fill="#046509" layoutX="24.0" layoutY="52.0" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
+                        <Circle fill="#8fa612" layoutX="24.0" layoutY="24.0" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="#4a08ff" strokeType="INSIDE" />
+                        <Circle fill="#801414" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
                     </children>
                 </VBox>
                 <VBox alignment="CENTER" layoutX="680.0" layoutY="330.0" prefHeight="116.0" prefWidth="38.0" spacing="4.0" style="-fx-background-color: #3a3a3a; -fx-background-radius: 10; -fx-padding: 5;">
                     <children>
-                        <Circle fill="#ff1f1f" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
-                        <Circle fill="#dbff1f" layoutX="24.0" layoutY="24.0" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="#4a08ff" strokeType="INSIDE" />
-                        <Circle fill="#0fea50" layoutX="24.0" layoutY="52.0" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
+                        <Circle fill="#801414" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
+                        <Circle fill="#8fa612" layoutX="24.0" layoutY="24.0" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="#4a08ff" strokeType="INSIDE" />
+                        <Circle fill="#046509" layoutX="24.0" layoutY="52.0" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
                         <Label fx:id="northTimerLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="11.0" prefWidth="28.0" style="-fx-text-fill: white; -fx-font-size: 10;" text="SAYAÇ" textAlignment="CENTER">
                             <font>
                                 <Font size="14.0" />
@@ -84,9 +92,9 @@
                 </VBox>
                 <HBox alignment="CENTER" layoutX="680.0" layoutY="97.0" prefHeight="38.0" prefWidth="132.0" spacing="4.0" style="-fx-background-color: #3a3a3a; -fx-background-radius: 10; -fx-padding: 5;">
                     <children>
-                        <Circle fill="#ff1f1f" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
-                        <Circle fill="#dbff1f" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="#4a08ff" strokeType="INSIDE" />
-                        <Circle fill="#0fea50" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
+                        <Circle fill="#801414" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
+                        <Circle fill="#8fa612" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="#4a08ff" strokeType="INSIDE" />
+                        <Circle fill="#046509" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
                         <Label fx:id="westTimerLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="30.0" prefWidth="50.0" rotate="-90.0" style="-fx-text-fill: white; -fx-font-size: 10;" text="SAYAÇ" textAlignment="CENTER">
                             <font>
                                 <Font size="14.0" />
@@ -101,9 +109,9 @@
                                 <Font size="14.0" />
                             </font>
                         </Label>
-                        <Circle fill="#0fea50" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
-                        <Circle fill="#dbff1f" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="#4a08ff" strokeType="INSIDE" />
-                        <Circle fill="#ff1f1f" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
+                        <Circle fill="#046509" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
+                        <Circle fill="#8fa612" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="#4a08ff" strokeType="INSIDE" />
+                        <Circle fill="#801414" radius="14.0" scaleX="0.8" scaleY="0.8" scaleZ="0.5" stroke="BLACK" strokeType="INSIDE" />
                     </children>
                 </HBox>
             <Line endX="148.878662109375" endY="357.0" layoutX="445.0" layoutY="-244.0" startX="148.878662109375" startY="129.87869262695312" strokeWidth="0.0" style="-fx-stroke: white; -fx-stroke-dash-array: 20; -fx-stroke-width: 3;" />

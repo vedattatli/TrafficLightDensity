@@ -92,7 +92,7 @@ public class UserInterfaceController {
         for (Direction yon : List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)) {
             TextInputDialog dialog = new TextInputDialog("5"); // Varsayılan 5 araç olsun
             dialog.setTitle("Araç Girişi");
-            dialog.setHeaderText(yon.getTurkishName() + " yönü için araç sayısı:");
+            dialog.setHeaderText(yon + " yönü için araç sayısı:");
             dialog.setContentText("Sayı:");
             Optional<String> sonuc = dialog.showAndWait();
             if (sonuc.isPresent() && !sonuc.get().trim().isEmpty()) {
