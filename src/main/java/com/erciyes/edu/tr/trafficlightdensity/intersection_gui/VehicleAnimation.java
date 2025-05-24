@@ -3,167 +3,181 @@ package com.erciyes.edu.tr.trafficlightdensity.intersection_gui;
 import com.erciyes.edu.tr.trafficlightdensity.brain.SimulationManager;
 import com.erciyes.edu.tr.trafficlightdensity.brain.TrafficController;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
-import com.erciyes.edu.tr.trafficlightdensity.road_objects.LightPhase;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.Vehicle;
 import javafx.animation.AnimationTimer;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 
 import java.util.*;
 
 /**
- * <p><strong>Araç animasyonu</strong>ndan sorumlu sınıf.</p>
- * <ul>
- *     <li>Her yöndeki kuyrukları oluşturur.</li>
- *     <li>Trafik ışığı YEŞİL ise aracı sabit hızla ileri taşır.</li>
- *     <li>KIRMIZI veya SARI ise aracı durdurur.</li>
- * </ul>
- * <p>Kod, <em>basit ve anlaşılır</em> olması için tamamen sade tutulmuştur.</p>
- * <p>Eski UI koduyla uyumlu kalmak amacıyla; <code>initializeVehicles</code>,
- * <code>startAnimation</code>, <code>stopAnimation</code> ve
- * <code>clearAllVehicles</code> isimli sarmalayıcı (wrapper) metotlar hâlâ
- * mevcuttur. Yeni tercih edilen isimler sırasıyla
- * <code>initialiseVehicles</code>, <code>start</code>, <code>stop</code> ve
- * <code>clear</code>.</p>
+ * <h2>KavşakAnimasyonu</h2>
+ * <p>
+ * Bu sınıf; araç kuyruklarını oluşturur, trafik ışığına göre hareket ettirir,
+ * kavşağa giren aracı sensör yardımıyla belirler ve ekran dışına çıkanları
+ * temizler. Kodun her satırı Türkçe yorumlarla açıklanmıştır; değişken ve metot
+ * adları da olabildiğince Türkçeleştirilmiştir.
+ * </p>
  */
 public final class VehicleAnimation {
 
-    // ───────────────────────────────── Sabitler ─────────────────────────────────
-    // Değerleri FXML sahnenize göre güncelleyin.
-    private static final double INTERSECTION_CENTER_X = 545.5;  // Kavşak merkez X
-    private static final double INTERSECTION_CENTER_Y = 250.0;  // Kavşak merkez Y
-    private static final double VEHICLE_QUEUE_OFFSET  = 200.0;  // İlk aracın başlangıç uzaklığı
-    private static final double LANE_OFFSET           = Vehicle.DEFAULT_WIDTH * 0.75;
-    private static final double EXTRA_SPACING         = Vehicle.DEFAULT_LENGTH + (Vehicle.DEFAULT_WIDTH * 2.0);
+    /* ───────────────────────────── Sabitler ──────────────────────────────── */
+    private static final double MERKEZ_X   = 545.5;                                   // Kavşak merkezi (X)
+    private static final double MERKEZ_Y   = 250.0;                                   // Kavşak merkezi (Y)
+    private static final double KUYRUK_OF  = 200.0;                                   // İlk araç ile merkez arası mesafe
+    private static final double ŞERİT_OF   = Vehicle.DEFAULT_WIDTH * 0.75;            // Şerit merkeze ofseti
+    private static final double ARA_BOŞLUK = Vehicle.DEFAULT_LENGTH + Vehicle.DEFAULT_WIDTH * 2.0; // Araçlar arası boşluk
 
-    // ───────────────────────────  Alan Değişkenleri ────────────────────────────
-    private final Map<Direction, List<Vehicle>> lanes = new EnumMap<>(Direction.class); // Her yön için araç listesi
-    private final SimulationManager simManager;   // Trafik ışığı fazlarını sorgulamak için
-    private final AnimationTimer timer;           // JavaFX animasyon zamanlayıcısı
+    private static final double SENSOR_THİCKNESS = 2.0; // px – sensör dikdörtgenlerinin kalınlığı
 
-    private Pane canvas;      // Araç düğümlerinin çizileceği Panel
-    private boolean running = false; // Animasyon çalışıyor mu?
+    /* ───────────────────────── Alan Değişkenleri ────────────────────────── */
+    private final Map<Direction, List<Vehicle>> şeritAraçları = new EnumMap<>(Direction.class); // Her yön için araç listesi
+    private final SimulationManager simYönetici;        // Trafik ışığı fazlarını almak için
+    private final AnimationTimer zamanlayıcı;            // JavaFX animasyon döngüsü
 
-    // ─────────────────────────────── Kurucu ────────────────────────────────────
-    public VehicleAnimation(SimulationManager simManager) {
-        this.simManager = simManager;
-        for (Direction d : Direction.values()) lanes.put(d, new ArrayList<>());
+    private Pane tuval;          // Araçların çizildiği ana panel
+    private boolean çalışıyor = false; // Animasyon aktif mi?
 
-        // Her karede çağrılan animasyon geri çağrısı
-        timer = new AnimationTimer() {
+    // Dört görünmez sensör
+    private Rectangle sensörKuzey, sensörGüney, sensörDoğu, sensörBatı;
+
+    /* ─────────────────────────── Yapıcı ─────────────────────────────────── */
+    public VehicleAnimation(SimulationManager simYönetici) {
+        this.simYönetici = simYönetici;
+        for (Direction d : Direction.values()) şeritAraçları.put(d, new ArrayList<>());
+
+        // Her karede tick() çağırılır
+        zamanlayıcı = new AnimationTimer() {
             @Override public void handle(long now) {
-                if (running && simManager.isRunning() && !simManager.isPaused()) {
-                    tick(); // Bir kare çiz
-                }
+                if (çalışıyor && simYönetici.isRunning() && !simYönetici.isPaused()) kareİşle();
             }
         };
     }
 
-    // ────────────────────────────── Genel API ──────────────────────────────────
+    /* ───────────────────────── Genel API ────────────────────────────────── */
 
-    /**
-     * Kuyrukları oluşturur ve araçları <code>mainPane</code>e ekler.
-     */
-    public void initialiseVehicles(TrafficController controller, Pane mainPane) {
-        clear();
-        this.canvas = mainPane;
-        if (canvas == null) {
-            System.err.println("VehicleAnimation ▶ mainPane NULL, araçlar çizilemedi!");
-            return;
-        }
-        controller.getVehicleCounts().forEach(this::createQueue);
-        System.out.println("Araçlar oluşturuldu ve sahneye eklendi.");
+    /** Simülasyon başlarken kuyrukları oluştur ve sensörleri ekle. */
+    public void kuyruklarıOluştur(TrafficController trafikKontrol, Pane anaPanel) {
+        temizle();                 // Önce eski her şeyi temizle
+        this.tuval = anaPanel;
+        if (tuval == null) { System.err.println("Pane NULL – çizim yapılamadı!"); return; }
+        sensörleriEkle();          // Görünmez sensörler
+        // trafficController içindeki her yön için araç sayısını al ve kuyruk hazırla
+        trafikKontrol.getVehicleCounts().forEach(this::şeritKuyrukEkle);
     }
 
-    /** Animasyonu başlatır. */
-    public void start() { if (!running) { running = true; timer.start(); } }
-    /** Animasyonu duraklatır. */
-    public void stop()  { if (running)  { running = false; timer.stop();  } }
+    /** Animasyonu başlat. */
+    public void başlat() { if (!çalışıyor) { çalışıyor = true; zamanlayıcı.start(); } }
+    /** Animasyonu durdur (pause). */
+    public void durdur() { if (çalışıyor)  { çalışıyor = false; zamanlayıcı.stop();  } }
 
-    /**
-     * Tüm araç düğümlerini sahneden kaldırır ve listeleri temizler.
-     */
-    public void clear() {
-        stop();
-        if (canvas != null) {
-            lanes.values().stream().flatMap(List::stream).map(Vehicle::getView)
-                    .forEach(canvas.getChildren()::remove);
+    /** Tüm araç ve sensörleri panelden ve bellekten temizler. */
+    public void temizle() {
+        durdur();
+        if (tuval != null) {
+            şeritAraçları.values().stream().flatMap(List::stream).map(Vehicle::getView)
+                    .forEach(tuval.getChildren()::remove);
+            tuval.getChildren().removeAll(sensörKuzey, sensörGüney, sensörDoğu, sensörBatı);
         }
-        lanes.values().forEach(List::clear);
+        şeritAraçları.values().forEach(List::clear);
+        sensörKuzey = sensörGüney = sensörDoğu = sensörBatı = null;
     }
 
-    // ─────────── Eski isimlerle uyumlu sarmalayıcı metotlar ───────────────
-    public void initializeVehicles(TrafficController c, Pane p) { initialiseVehicles(c, p); }
-    public void startAnimation()                                { start(); }
-    public void stopAnimation()                                 { stop();  }
-    public void clearAllVehicles()                              { clear(); }
+    /* Eski isimlerle uyumluluk (UI kodu bozmasın diye) */
+    public void initialiseVehicles(TrafficController c, Pane p){kuyruklarıOluştur(c,p);}
+    public void initializeVehicles(TrafficController c, Pane p){kuyruklarıOluştur(c,p);}
+    public void startAnimation(){başlat();}
+    public void stopAnimation(){durdur();}
+    public void clearAllVehicles(){temizle();}
 
-    // ───────────────────────────── Yardımcı Metotlar ───────────────────────────
+    /* ───────────────────── Sensör Ekleme ───────────────────── */
+    private void sensörleriEkle() {
+        if (sensörKuzey != null) return; // Zaten eklenmiş
 
-    /**
-     * Belirli bir yönde <code>count</code> kadar aracı sıraya dizer.
-     */
-    private void createQueue(Direction dir, int count) {
-        List<Vehicle> list = lanes.get(dir);
-        double baseX = 0, baseY = 0; // İlk aracın konumu
+        double yolGenişlik = Vehicle.DEFAULT_WIDTH * 3;
 
-        switch (dir) {
-            case NORTH -> {
-                baseX = INTERSECTION_CENTER_X + LANE_OFFSET - Vehicle.DEFAULT_WIDTH / 2;
-                baseY = INTERSECTION_CENTER_Y + VEHICLE_QUEUE_OFFSET;
-            }
-            case SOUTH -> {
-                baseX = INTERSECTION_CENTER_X - LANE_OFFSET - Vehicle.DEFAULT_WIDTH / 2 + Vehicle.DEFAULT_WIDTH;
-                baseY = INTERSECTION_CENTER_Y - VEHICLE_QUEUE_OFFSET - Vehicle.DEFAULT_LENGTH;
-            }
-            case EAST -> {
-                baseX = INTERSECTION_CENTER_X - VEHICLE_QUEUE_OFFSET - Vehicle.DEFAULT_LENGTH;
-                baseY = INTERSECTION_CENTER_Y + LANE_OFFSET - Vehicle.DEFAULT_WIDTH / 2;
-            }
-            case WEST -> {
-                baseX = INTERSECTION_CENTER_X + VEHICLE_QUEUE_OFFSET;
-                baseY = INTERSECTION_CENTER_Y - LANE_OFFSET - Vehicle.DEFAULT_WIDTH / 2;
-            }
+        sensörKuzey = sensörOluştur(MERKEZ_X - yolGenişlik/2, MERKEZ_Y - SENSOR_THİCKNESS /2, yolGenişlik, SENSOR_THİCKNESS);
+        sensörGüney = sensörOluştur(MERKEZ_X - yolGenişlik/2, MERKEZ_Y + SENSOR_THİCKNESS/2, yolGenişlik, SENSOR_THİCKNESS);
+
+        sensörDoğu  = sensörOluştur(MERKEZ_X - SENSOR_THİCKNESS/2, MERKEZ_Y - yolGenişlik/2, SENSOR_THİCKNESS, yolGenişlik);
+        sensörBatı  = sensörOluştur(MERKEZ_X + SENSOR_THİCKNESS/2, MERKEZ_Y - yolGenişlik/2, SENSOR_THİCKNESS, yolGenişlik);
+
+        tuval.getChildren().addAll(sensörKuzey, sensörGüney, sensörDoğu, sensörBatı);
+    }
+
+    /** Şeffaf sensör diktörtgeni üretir. */
+    private Rectangle sensörOluştur(double x, double y, double w, double h) {
+        Rectangle r = new Rectangle(w, h);
+        r.setFill(Color.TRANSPARENT);
+        r.setLayoutX(x);
+        r.setLayoutY(y);
+        r.setMouseTransparent(true); // Fare etkileşimi almasın
+        return r;
+    }
+
+    /* ───────────────────── Kuyruk Hazırlama ───────────────────── */
+    private void şeritKuyrukEkle(Direction yön, int adet) {
+        List<Vehicle> liste = şeritAraçları.get(yön);
+        double başlangıçX = 0, başlangıçY = 0;
+
+        // İlk aracın konumunu belirle
+        switch (yön) {
+            case NORTH -> { başlangıçX = MERKEZ_X + ŞERİT_OF - Vehicle.DEFAULT_WIDTH/2; başlangıçY = MERKEZ_Y + KUYRUK_OF; }
+            case SOUTH -> { başlangıçX = MERKEZ_X - ŞERİT_OF - Vehicle.DEFAULT_WIDTH/2 + Vehicle.DEFAULT_WIDTH; başlangıçY = MERKEZ_Y - KUYRUK_OF - Vehicle.DEFAULT_LENGTH; }
+            case EAST  -> { başlangıçX = MERKEZ_X - KUYRUK_OF - Vehicle.DEFAULT_LENGTH; başlangıçY = MERKEZ_Y + ŞERİT_OF - Vehicle.DEFAULT_WIDTH/2; }
+            case WEST  -> { başlangıçX = MERKEZ_X + KUYRUK_OF; başlangıçY = MERKEZ_Y - ŞERİT_OF - Vehicle.DEFAULT_WIDTH/2; }
         }
 
-        for (int i = 0; i < count; i++) {
-            double x = baseX;
-            double y = baseY;
-            switch (dir) {
-                case NORTH -> y += i * EXTRA_SPACING;
-                case SOUTH -> y -= i * EXTRA_SPACING;
-                case EAST  -> x -= i * EXTRA_SPACING;
-                case WEST  -> x += i * EXTRA_SPACING;
+        // Her araç için konumu ofsetle, oluştur, listeye ve panele ekle
+        for (int i = 0; i < adet; i++) {
+            double x = başlangıçX, y = başlangıçY;
+            switch (yön) {
+                case NORTH -> y += i * ARA_BOŞLUK;
+                case SOUTH -> y -= i * ARA_BOŞLUK;
+                case EAST  -> x -= i * ARA_BOŞLUK;
+                case WEST  -> x += i * ARA_BOŞLUK;
             }
-            // Benzersiz ve anlaşılır bir kimlik veriyoruz
-            String id = dir.name().charAt(0) + "_Car" + (i + 1);
-            Vehicle v = new Vehicle(dir, x, y);
-            list.add(v);
-            canvas.getChildren().add(v.getView());
+            Vehicle araç = new Vehicle(yön, x, y);
+            liste.add(araç);
+            tuval.getChildren().add(araç.getView());
         }
     }
 
-    /**
-     * Bir karelik animasyon güncellemesi: ışık fazını al, aracı ilerlet.
-     */
-    private void tick() {
-        for (Map.Entry<Direction, List<Vehicle>> entry : lanes.entrySet()) {
-            LightPhase phase = simManager.getLightPhaseForDirection(entry.getKey());
-            for (Vehicle v : entry.getValue()) v.move(phase);
-        }
-        // Ekran dışına çıkan araçları silerek performans koru
-        lanes.values().forEach(list -> list.removeIf(this::pruneIfOffScreen));
+    /* ───────────────────── Ana Animasyon Döngüsü ───────────────────── */
+    private void kareİşle(){
+        // 1) Araçları ışığa göre hareket ettir
+        şeritAraçları.forEach((yön, liste) -> liste.forEach(ar -> ar.move(simYönetici.getLightPhaseForDirection(yön))));
+
+        // 2) Sensör kesişimini test et → kavşağa girdi mi?
+        şeritAraçları.values().forEach(liste -> liste.forEach(this::sensörKontrol));
+
+        // 3) Ekran dışına çıkanları panelden ve listeden kaldır
+        şeritAraçları.values().forEach(liste -> liste.removeIf(this::ekranDışıMı));
     }
 
-    /**
-     * Araç ekran dışına çıktıysa düğümü sahneden kaldırır ve <code>true</code>
-     * döner; aksi halde <code>false</code>.
-     */
-    private boolean pruneIfOffScreen(Vehicle v) {
-        if (canvas == null) return false;
-        double w = canvas.getWidth(), h = canvas.getHeight();
-        double x = v.getView().getLayoutX(), y = v.getView().getLayoutY();
-        boolean disarda = x < -100 || x > w + 100 || y < -100 || y > h + 100;
-        if (disarda) canvas.getChildren().remove(v.getView());
-        return disarda;
+    /** Aracın sensörle kesişip kesişmediğini kontrol eder. */
+    private void sensörKontrol(Vehicle araç){
+        if(araç.isInIntersection()) return; // Zaten işaretli
+        Rectangle sensör = switch(araç.getDirection()){
+            case NORTH -> sensörKuzey;
+            case SOUTH -> sensörGüney;
+            case EAST  -> sensörDoğu;
+            case WEST  -> sensörBatı;
+        };
+        // Bounds kesişiyorsa kavşağa girmiş say
+        if(araç.getView().getBoundsInParent().intersects(sensör.getBoundsInParent())){
+            araç.markInsideIntersection();
+        }
+    }
+
+    /** Araç ekrandan çıktıysa true döndür, ayrıca node’u panelden sil. */
+    private boolean ekranDışıMı(Vehicle araç){
+        if(tuval==null) return false;
+        double w=tuval.getWidth(), h=tuval.getHeight();
+        double x=araç.getView().getLayoutX(), y=araç.getView().getLayoutY();
+        boolean dışarıda=x<-100||x>w+100||y<-100||y>h+100;
+        if(dışarıda) tuval.getChildren().remove(araç.getView());
+        return dışarıda;
     }
 }
