@@ -7,67 +7,52 @@ import javafx.scene.shape.Rectangle;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Vehicle represents a single, simple car in the simulation.
- *
- * Behaviour rules:
+ * <h2>Araç (Vehicle) Sınıfı</h2>
+ * Basit, tek tip bir aracı temsil eder.
  * <ul>
- *     <li>If the traffic light in its lane is <b>GREEN</b>, the vehicle moves forward at {@code DEFAULT_SPEED}.</li>
- *     <li>Otherwise (<b>RED</b> or <b>YELLOW</b>), it stops exactly where it is.</li>
+ *     <li>Şeridindeki trafik ışığı <b>YEŞİL</b> ise {@link #DEFAULT_SPEED} ile ilerler.</li>
+ *     <li>Işık <b>KIRMIZI</b> veya <b>SARI</b> ise durur.</li>
  * </ul>
- * No intersection geometry, collision‑avoidance, or queue logic is included.
- * Each vehicle is given a random pastel colour when created so it is easy to
- * distinguish on screen.
+ * Kavşak geometrisi veya çarpışma kontrolü içermez. Oluşturulan her araca rastgele pastel bir renk atanır.
  */
 public class Vehicle {
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    //  CONSTANTS
-    // ─────────────────────────────────────────────────────────────────────────────
-    public static final double DEFAULT_LENGTH = 30.0;  // px – along the direction of travel
-    public static final double DEFAULT_WIDTH  = 15.0;  // px – perpendicular to travel
-    public static final double DEFAULT_SPEED  = 2.0;   // px per animation frame
+    // ─────────────────────────── Sabitler ───────────────────────────
+    public static final double DEFAULT_LENGTH = 30.0; // px – boy
+    public static final double DEFAULT_WIDTH  = 15.0; // px – en
+    public static final double DEFAULT_SPEED  = 2.0;  // px/kare – sabit hız
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    //  STATE
-    // ─────────────────────────────────────────────────────────────────────────────
-    private final String id;
-    private final Direction direction;
+    // ───────────────────────── Alan Değişkenleri ────────────────────
+    private final Direction direction; // Gidiş yönü
+    private double x;                  // Sol‑üst X koordinatı
+    private double y;                  // Sol‑üst Y koordinatı
+    private double speed;              // Anlık hız (px/kare)
 
-    private double x;          // top‑left X (px)
-    private double y;          // top‑left Y (px)
-    private double speed;      // current speed (px/frame)
+    private final Node view;           // JavaFX’te çizilen şekil
 
-    private final Node view;   // JavaFX node rendered on the canvas
-
-    // ─────────────────────────────────────────────────────────────────────────────
-    //  CONSTRUCTOR
-    // ─────────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────── Yapıcılar ──────────────────────────
 
     /**
-     * Builds a new vehicle instance.
+     * Yeni araç oluşturur.
      *
-     * @param id        unique identifier (useful for debugging)
-     * @param direction direction of travel (NORTH, SOUTH, EAST, WEST)
-     * @param startX    initial X position
-     * @param startY    initial Y position
+     * @param direction Gidiş yönü (NORTH, SOUTH, EAST, WEST)
+     * @param startX    Başlangıç X koordinatı
+     * @param startY    Başlangıç Y koordinatı
      */
-    public Vehicle(String id, Direction direction, double startX, double startY) {
-        this.id        = id;
+    public Vehicle(Direction direction, double startX, double startY) {
         this.direction = direction;
-        this.x         = startX;
-        this.y         = startY;
-        this.speed     = 0; // start stationary
+        this.x = startX;
+        this.y = startY;
+        this.speed = 0; // Başlangıçta durur
 
-        // Rectangle used to draw the vehicle
+        // Araç görünümü: dikdörtgen
         Rectangle rect = new Rectangle(DEFAULT_WIDTH, DEFAULT_LENGTH);
-
-        // Rotate for east/west so the long side faces the correct axis
         if (direction == Direction.EAST || direction == Direction.WEST) {
+            // Doğu/Batı için uzun kenarı yatay yap
             rect.setWidth(DEFAULT_LENGTH);
             rect.setHeight(DEFAULT_WIDTH);
         }
-
-        rect.setFill(randomPastel());   // random colour per vehicle
+        rect.setFill(randomPastel());
         rect.setStroke(Color.BLACK);
         rect.setStrokeWidth(0.5);
 
@@ -75,61 +60,45 @@ public class Vehicle {
         updateViewPosition();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    //  PUBLIC API
-    // ─────────────────────────────────────────────────────────────────────────────
+    /**
+     * <p>Geriye dönük uyumluluk amacıyla, eski API’de bulunan yapıcıyı
+     * destekler. <code>id</code> parametresi <em>kullanılmıyor</em>.</p>
+     */
+    public Vehicle(String id, Direction direction, double startX, double startY) {
+        this(direction, startX, startY); // id yok sayılır
+    }
+
+    // ───────────────────────── Genel API ────────────────────────────
 
     /**
-     * Advances the vehicle by one animation tick.
-     *
-     * @param currentPhase traffic‑light phase for this vehicle's lane.
-     *                     <ul>
-     *                         <li>GREEN  → move at {@link #DEFAULT_SPEED}</li>
-     *                         <li>RED/YELLOW → stop</li>
-     *                     </ul>
+     * Bir animasyon karesi boyunca aracı günceller.
+     * @param phase Bu aracın şeridine ait trafik ışığı fazı
      */
-    public void move(LightPhase currentPhase) {
-        // 1 – determine speed from light phase
-        speed = (currentPhase == LightPhase.GREEN) ? DEFAULT_SPEED : 0;
+    public void move(LightPhase phase) {
+        // Işığa göre hız belirle
+        speed = (phase == LightPhase.GREEN) ? DEFAULT_SPEED : 0;
 
-        // 2 – update logical position
+        // Konumu güncelle
         switch (direction) {
             case NORTH -> y -= speed;
             case SOUTH -> y += speed;
             case EAST  -> x += speed;
             case WEST  -> x -= speed;
         }
-
-        // 3 – push to JavaFX node
         updateViewPosition();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    //  HELPERS
-    // ─────────────────────────────────────────────────────────────────────────────
-
-    /** Synchronises the JavaFX node with the logical coordinates. */
+    // ─────────────────────── Yardımcı Metotlar ──────────────────────
     private void updateViewPosition() {
         view.setLayoutX(x);
         view.setLayoutY(y);
     }
 
-    /**
-     * Generates a random pastel colour (low saturation, high brightness) so that
-     * vehicles look distinct yet unobtrusive.
-     */
     private static Color randomPastel() {
         double hue = ThreadLocalRandom.current().nextDouble(0, 360);
-        double saturation = 0.4;   // pastel feel
-        double brightness  = 0.85; // keep it light
-        return Color.hsb(hue, saturation, brightness);
+        return Color.hsb(hue, 0.4, 0.85); // Düşük satürasyon, yüksek parlaklık
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    //  GETTERS
-    // ─────────────────────────────────────────────────────────────────────────────
-
-    public Node getView()           { return view; }
-    public String getId()           { return id; }
-    public Direction getDirection() { return direction; }
+    // ───────────────────────── Getter’lar ───────────────────────────
+    public Node getView() { return view; }
 }
