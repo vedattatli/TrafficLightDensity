@@ -6,14 +6,11 @@ import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
 //Işık fazlarının geri sayımını sayısal olarak gösterir.
 public class TimerDisplay {
     private final UserInterfaceController userInterfaceController;
-    private final TrafficController trafficController;
 
 
-    public TimerDisplay(UserInterfaceController userInterfaceController, TrafficController trafficController)
+    public TimerDisplay(UserInterfaceController userInterfaceController)
     {
         this.userInterfaceController=userInterfaceController;
-        this.trafficController = trafficController;
-
     }
 
     public void labeliGuncelle(Direction aktifYon, int sure) {
@@ -46,7 +43,7 @@ public class TimerDisplay {
     }
 
 
-    public void labelTimerBaslangic() {
+    public void labelTimerBaslangic(TrafficController trafficController) {
 
         if (trafficController == null) return;
         userInterfaceController.northTimerLabel.setText(trafficController.getGreenDuration(Direction.NORTH) + " sn");
@@ -64,7 +61,7 @@ public class TimerDisplay {
 
     }
 
-    public void labelDisplayBaslangic()
+    public void labelDisplayBaslangic(TrafficController trafficController)
     {
         userInterfaceController.displayEastGreenTime.setText(trafficController.getGreenDuration(Direction.EAST) + " sn");
         userInterfaceController.displayWestGreenTime.setText(trafficController.getGreenDuration(Direction.WEST) + " sn");

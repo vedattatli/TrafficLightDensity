@@ -33,6 +33,7 @@ public class SimulationManager {
     {
         this.timerDisplay = timerDisplay;
     }
+
     public TrafficController getTrafficController() {
         return trafficController;
     }
@@ -219,10 +220,10 @@ public class SimulationManager {
             randomCounts.put(dir, rand.nextInt(30));
         }
 
-        trafficController.setVehicleCounts(randomCounts);
-        trafficController.updateDurations();
+        this.trafficController.setVehicleCounts(randomCounts);
+        this.trafficController.updateDurations();
 
-        this.timerDisplay.labelDisplayBaslangic();
+        this.timerDisplay.labelDisplayBaslangic(this.trafficController);
 
 
 
@@ -232,8 +233,9 @@ public class SimulationManager {
 
     public void startManualMode(Map<Direction, Integer> manualCounts) {
         isAutoMode = false;
-        trafficController.setVehicleCounts(manualCounts);
-        trafficController.updateDurations();
+        this.trafficController.setVehicleCounts(manualCounts);
+        this.trafficController.updateDurations();
+        this.timerDisplay.labelDisplayBaslangic(this.trafficController);
         startSimulation();
     }
 }

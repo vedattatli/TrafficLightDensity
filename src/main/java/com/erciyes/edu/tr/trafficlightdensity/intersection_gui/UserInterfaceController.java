@@ -10,8 +10,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.event.ActionEvent;
-import javafx.scene.shape.Rectangle;
-
 import java.util.*;
 
 public class UserInterfaceController {
@@ -55,7 +53,7 @@ public class UserInterfaceController {
         simulationManager = new SimulationManager();
         vehicleAnimator = new VehicleAnimation(simulationManager);
         trafficController = new TrafficController();
-        this.timerDisplay = new TimerDisplay(UserInterfaceController.this, trafficController);
+        this.timerDisplay = new TimerDisplay(this);
         simulationManager.setTimerDisplay(this.timerDisplay);
 
 
@@ -127,8 +125,8 @@ public class UserInterfaceController {
             }
         }
         trafficController.updateDurations();
-        timerDisplay.labelTimerBaslangic();
-        timerDisplay.labelDisplayBaslangic();
+        timerDisplay.labelTimerBaslangic(this.trafficController);
+        timerDisplay.labelDisplayBaslangic(this.trafficController);
 
         topVBox.setVisible(false);
         mainPane.setVisible(true);
