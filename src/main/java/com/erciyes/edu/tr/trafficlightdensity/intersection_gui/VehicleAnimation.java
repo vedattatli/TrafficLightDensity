@@ -8,155 +8,158 @@ import com.erciyes.edu.tr.trafficlightdensity.road_objects.Vehicle;
 import javafx.animation.AnimationTimer;
 import javafx.scene.layout.Pane;
 
+import java.util.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Iterator;
+/**
+ *  * Extremely simplified animation loop that matches the streamlined {@link Vehicle}
+ *  class ("green → move", "red/yellow → stop").
+ *
+ *  * <p>All intersection-geometry constants live <em>here</em> now so the {@code Vehicle}
+ *  class can stay 100 % generic.</p>
+ *
+ *  * <p><b>Compatibility Note:</b> Original controller classes referenced the old
+ *  API names (<code>initializeVehicles</code>, <code>startAnimation</code>, etc.).
+ *  Thin wrapper methods have been added so you can compile without touching the
+ *  UI code. New preferred names are <code>initialiseVehicles</code>,
+ *  <code>start</code>, <code>stop</code>, and <code>clear</code>.</p>
+ */
+public final class VehicleAnimation {
 
-public class VehicleAnimation {
-    private Map<Direction, List<Vehicle>> vehiclesByDirection;
-    private Pane mainPane; // Araçların çizileceği ana panel
-    private AnimationTimer animationTimer;
-    private SimulationManager simulationManagerRef; // Işık durumlarını almak için
-    private boolean isAnimationRunning = false;
+    // ─────────────────────────────────────────────────────────────────────────────
+    //  CONFIG – tune these to match your FXML canvas size
+    // ─────────────────────────────────────────────────────────────────────────────
 
-    private static final double VEHICLE_QUEUE_START_OFFSET = 200;
-    private static final double LANE_OFFSET_FROM_CENTER = Vehicle.DEFAULT_WIDTH * 0.75;
+    private static final double INTERSECTION_CENTER_X  = 545.5;      // px
+    private static final double INTERSECTION_CENTER_Y  = 250.0;      // px
+    private static final double VEHICLE_QUEUE_OFFSET   = 200.0;      // px – how far back the first queued car starts
+    private static final double LANE_OFFSET            = Vehicle.DEFAULT_WIDTH * 0.75; // px – half-lane from centre
+    private static final double EXTRA_SPACING          = Vehicle.DEFAULT_LENGTH + (Vehicle.DEFAULT_WIDTH * 2.0);
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    //  INSTANCE FIELDS
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    private final Map<Direction, List<Vehicle>> lanes = new EnumMap<>(Direction.class);
+    private final SimulationManager simManager;
+    private final AnimationTimer timer;
+
+    private Pane canvas;
+    private boolean running = false;
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    //  CTOR
+    // ─────────────────────────────────────────────────────────────────────────────
 
     public VehicleAnimation(SimulationManager simManager) {
-        this.vehiclesByDirection = new HashMap<>();
-        for (Direction dir : Direction.values()) {
-            vehiclesByDirection.put(dir, new ArrayList<>());
-        }
-        this.simulationManagerRef = simManager;
+        this.simManager = simManager;
+        for (Direction d : Direction.values()) lanes.put(d, new ArrayList<>());
 
-        animationTimer = new AnimationTimer() {
-
-            @Override
-            public void handle(long now) {
-
-                if (isAnimationRunning && simulationManagerRef != null && simulationManagerRef.isRunning() && !simulationManagerRef.isPaused()) {
-                    updateVehiclePositions();
+        timer = new AnimationTimer() {
+            @Override public void handle(long now) {
+                if (running && simManager != null && simManager.isRunning() && !simManager.isPaused()) {
+                    tick();
                 }
             }
         };
     }
 
-    public void initializeVehicles(TrafficController trafficController, Pane mainPane) {
-        clearAllVehicles(); // Önceki simülasyondan kalan araçları temizle
-        this.mainPane = mainPane;
-        if (this.mainPane == null) {
-            System.err.println("VehicleAnimation Error: MainPane null, araçlar çizilemiyor.");
+    // ─────────────────────────────────────────────────────────────────────────────
+    //  PUBLIC API (new preferred names)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    /** Builds queues for every direction & adds nodes to <code>mainPane</code>. */
+    public void initialiseVehicles(TrafficController controller, Pane mainPane) {
+        clear();
+        this.canvas = mainPane;
+        if (canvas == null) {
+            System.err.println("VehicleAnimation ▶ mainPane is null; cannot render vehicles.");
             return;
         }
-        Map<Direction, Integer> vehicleCounts = trafficController.getVehicleCounts();
 
-        for (Direction dir : Direction.values()) {
-            int count = vehicleCounts.getOrDefault(dir, 0);
-            List<Vehicle> laneVehicles = vehiclesByDirection.get(dir); // Bu yöne ait araç listesini al
-            laneVehicles.clear(); // Listeyi temizle (initialize her çağrıldığında sıfırdan başlasın)
-
-            double startX = 0, startY = 0;
-            // Araçları kendi yönlerine göre kavşağın dışında, geriye doğru sırala
-            for (int i = 0; i < count; i++) {
-                String vehicleId = dir.name().charAt(0) + "_Car" + (i + 1);
-                double vehicleSpacing = Vehicle.DEFAULT_LENGTH + Vehicle.SAFE_DISTANCE_BUFFER * 5; // Araçlar arası daha fazla boşluk
-
-                switch (dir) {
-                    case NORTH: // Kuzeye gidecekler, ekranın altından (güneyden) gelir – sağ şerit doğru
-                        startX = Vehicle.INTERSECTION_CENTER_X + LANE_OFFSET_FROM_CENTER - Vehicle.DEFAULT_WIDTH / 2;
-                        startY = Vehicle.INTERSECTION_CENTER_Y + VEHICLE_QUEUE_START_OFFSET + (i * vehicleSpacing);
-                        break;
-
-                    case SOUTH: // Güneye gidecekler, ekranın üstünden (kuzeyden) gelir – sağ şeride hizalandı
-                        startX = 550.0;
-                        startY = Vehicle.INTERSECTION_CENTER_Y - VEHICLE_QUEUE_START_OFFSET - Vehicle.DEFAULT_LENGTH - (i * vehicleSpacing);
-                        break;
-
-                    case EAST:  // Doğuya gidecekler, ekranın solundan (batıdan) gelir – sağ şeride hizalandı
-                        startX = Vehicle.INTERSECTION_CENTER_X - VEHICLE_QUEUE_START_OFFSET - Vehicle.DEFAULT_LENGTH - (i * vehicleSpacing);
-                        startY = Vehicle.INTERSECTION_CENTER_Y + LANE_OFFSET_FROM_CENTER - Vehicle.DEFAULT_WIDTH / 2;
-                        break;
-
-                    case WEST:  // Batıya gidecekler, ekranın sağından (doğudan) gelir – sağ şerit doğru
-                        startX = Vehicle.INTERSECTION_CENTER_X + VEHICLE_QUEUE_START_OFFSET + (i * vehicleSpacing);
-                        startY = Vehicle.INTERSECTION_CENTER_Y - LANE_OFFSET_FROM_CENTER - Vehicle.DEFAULT_WIDTH / 2;
-                        break;
-                }
-
-                Vehicle vehicle = new Vehicle(vehicleId, dir, startX, startY);
-                laneVehicles.add(vehicle);
-                this.mainPane.getChildren().add(vehicle.getView());
-            }
-        }
-        System.out.println("Araçlar başlatıldı ve pane'e eklendi.");
+        controller.getVehicleCounts().forEach(this::createQueue);
+        System.out.println("Vehicles initialised & added to canvas.");
     }
 
-    private void updateVehiclePositions() {
-//        if (simulationManagerRef == null) return;
+    /** Starts the per‑frame animation loop. */
+    public void start()  { if (!running) { running = true;  timer.start(); } }
+    /** Stops (pauses) the animation loop. */
+    public void stop()   { if (running)  { running = false; timer.stop();  } }
+    /** Removes all vehicles from both canvas and internal lists. */
+    public void clear() {
+        stop();
+        if (canvas != null) {
+            lanes.values().stream().flatMap(List::stream).map(Vehicle::getView).forEach(canvas.getChildren()::remove);
+        }
+        lanes.values().forEach(List::clear);
+    }
 
-        for (Direction dir : Direction.values()) {
-            List<Vehicle> laneVehicles = vehiclesByDirection.get(dir);
+    // ─────────────────────────────────────────────────────────────────────────────
+    //  LEGACY WRAPPERS (for existing UI code)
+    // ─────────────────────────────────────────────────────────────────────────────
 
-//            for (int i = 0; i < laneVehicles.size(); i++) {
-//                Vehicle currentVehicle = laneVehicles.get(i);
-//                Vehicle leadingVehicle = null;
-//            }
+    public void initializeVehicles(TrafficController c, Pane p) { initialiseVehicles(c, p); }
+    public void startAnimation()                                { start();                 }
+    public void stopAnimation()                                 { stop();                  }
+    public void clearAllVehicles()                              { clear();                 }
 
-            for (Vehicle currentVehicle : laneVehicles) {
-                LightPhase lightPhase = simulationManagerRef.getLightPhaseForDirection(currentVehicle.getDirection());
-                currentVehicle.move(lightPhase, null); // Şimdilik leadingVehicle null
+    // ─────────────────────────────────────────────────────────────────────────────
+    //  PRIVATE HELPERS
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    private void createQueue(Direction dir, int count) {
+        List<Vehicle> list = lanes.get(dir);
+        double baseX = 0, baseY = 0; // position for first in the queue
+
+        switch (dir) {
+            case NORTH -> {
+                baseX = INTERSECTION_CENTER_X + LANE_OFFSET - Vehicle.DEFAULT_WIDTH / 2;
+                baseY = INTERSECTION_CENTER_Y + VEHICLE_QUEUE_OFFSET;
             }
-
-
+            case SOUTH -> {
+                baseX = INTERSECTION_CENTER_X - LANE_OFFSET - Vehicle.DEFAULT_WIDTH / 2 + Vehicle.DEFAULT_WIDTH; // visual tweak
+                baseY = INTERSECTION_CENTER_Y - VEHICLE_QUEUE_OFFSET - Vehicle.DEFAULT_LENGTH;
+            }
+            case EAST -> {
+                baseX = INTERSECTION_CENTER_X - VEHICLE_QUEUE_OFFSET - Vehicle.DEFAULT_LENGTH;
+                baseY = INTERSECTION_CENTER_Y + LANE_OFFSET - Vehicle.DEFAULT_WIDTH / 2;
+            }
+            case WEST -> {
+                baseX = INTERSECTION_CENTER_X + VEHICLE_QUEUE_OFFSET;
+                baseY = INTERSECTION_CENTER_Y - LANE_OFFSET - Vehicle.DEFAULT_WIDTH / 2;
+            }
         }
 
-        // Kavşağı geçen araçları temizle
-        for (List<Vehicle> laneVehicles : vehiclesByDirection.values()) {
-            Iterator<Vehicle> iterator = laneVehicles.iterator();
-            while (iterator.hasNext()) {
-                Vehicle vehicle = iterator.next();
-                if (vehicle.getState() == Vehicle.VehicleState.PASSED) {
-                    if (mainPane != null) {
-                        mainPane.getChildren().remove(vehicle.getView());
-                    }
-                    iterator.remove();
-                    System.out.println(vehicle.getId() + " kavşağı geçti ve kaldırıldı.");
-                }
+        for (int i = 0; i < count; i++) {
+            double x = baseX;
+            double y = baseY;
+            switch (dir) {
+                case NORTH -> y += i * EXTRA_SPACING;
+                case SOUTH -> y -= i * EXTRA_SPACING;
+                case EAST  -> x -= i * EXTRA_SPACING;
+                case WEST  -> x += i * EXTRA_SPACING;
             }
+            Vehicle v = new Vehicle(dir.name().charAt(0) + "_Car" + (i + 1), dir, x, y);
+            list.add(v);
+            canvas.getChildren().add(v.getView());
         }
     }
 
-    public void startAnimation() {
-        if (!isAnimationRunning) {
-            isAnimationRunning = true;
-            animationTimer.start();
-            System.out.println("Araç animasyonu başlatıldı.");
+    /** Single animation step for <em>all</em> vehicles. */
+    private void tick() {
+        for (Map.Entry<Direction, List<Vehicle>> entry : lanes.entrySet()) {
+            LightPhase phase = simManager.getLightPhaseForDirection(entry.getKey());
+            for (Vehicle v : entry.getValue()) v.move(phase);
         }
+        lanes.values().forEach(list -> list.removeIf(this::pruneIfOffScreen));
     }
 
-    public void stopAnimation() {
-        if (isAnimationRunning) {
-            isAnimationRunning = false;
-            animationTimer.stop();
-            System.out.println("Araç animasyonu durduruldu.");
-        }
-    }
-
-    public void clearAllVehicles() {
-        stopAnimation(); // Animasyonu durdur
-        if (mainPane != null) {
-            for (List<Vehicle> laneVehicles : vehiclesByDirection.values()) {
-                for (Vehicle vehicle : laneVehicles) {
-                    mainPane.getChildren().remove(vehicle.getView());
-                }
-            }
-        }
-        for (List<Vehicle> laneVehicles : vehiclesByDirection.values()) {
-            laneVehicles.clear();
-        }
-        System.out.println("Tüm araçlar temizlendi.");
+    /** Returns true <em>and</em> removes the node if the car has driven out of view. */
+    private boolean pruneIfOffScreen(Vehicle v) {
+        if (canvas == null) return false;
+        double w = canvas.getWidth(), h = canvas.getHeight();
+        double x = v.getView().getLayoutX(), y = v.getView().getLayoutY();
+        boolean off = x < -100 || x > w + 100 || y < -100 || y > h + 100;
+        if (off) canvas.getChildren().remove(v.getView());
+        return off;
     }
 }
