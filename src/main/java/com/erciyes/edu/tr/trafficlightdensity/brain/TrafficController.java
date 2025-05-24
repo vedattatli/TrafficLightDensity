@@ -14,7 +14,7 @@ public class TrafficController {
     Map<Direction, Integer> vehicleCount;
     HashMap<Direction, Integer> greenDurations;
 
-    private int totalVehicleCount = 0;
+    private int totalVehicleCount;
 
     /**
      * TrafficController constructor.
@@ -37,7 +37,7 @@ public class TrafficController {
         return vehicleCount;
     }
 
-    private int calculateTotalVehicleCount() {
+    public int calculateTotalVehicleCount() {
         totalVehicleCount = 0; // yeniden hesaplamaya başlarken sıfırla
         if (vehicleCount != null) { // vehicleCount null değilse döngüye gir
             for (int count : vehicleCount.values()) {

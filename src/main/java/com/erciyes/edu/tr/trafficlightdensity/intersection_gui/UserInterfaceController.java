@@ -3,7 +3,6 @@ package com.erciyes.edu.tr.trafficlightdensity.intersection_gui;
 import com.erciyes.edu.tr.trafficlightdensity.brain.SimulationManager;
 import com.erciyes.edu.tr.trafficlightdensity.brain.TrafficController;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
-import com.erciyes.edu.tr.trafficlightdensity.road_objects.LightPhase;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.Pane;
@@ -13,44 +12,60 @@ import javafx.scene.control.Label;
 import javafx.event.ActionEvent;
 import javafx.scene.shape.Rectangle;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class UserInterfaceController {
-    TrafficController trafficController = new TrafficController();
-    SimulationManager simulationManager = new SimulationManager();
 
-
+    SimulationManager simulationManager;
+    TrafficController trafficController;
+    TimerDisplay timerDisplay;
     VehicleAnimation vehicleAnimator;
+
+    public UserInterfaceController(SimulationManager simulationManager, TrafficController trafficController,TimerDisplay timerDisplay)
+    {
+        this.trafficController = trafficController;
+        this.simulationManager = simulationManager;
+        this.timerDisplay = timerDisplay;
+    }
+
+    public UserInterfaceController()
+    {
+
+    }
 
     boolean isRandom;
     boolean simulationIsCurrentlyPaused = false;
 
     @FXML private Pane mainPane;
-    @FXML private Button random_select_button;
-    @FXML private Button user_input_button;
+//    @FXML private Button random_select_button;
+//    @FXML private Button user_input_button;
     @FXML private Button startButton;
     @FXML private Button pauseButton;
     @FXML private Button rerunButton;
-    @FXML private Label northTimerLabel, southTimerLabel, eastTimerLabel, westTimerLabel;
+    @FXML public Label northTimerLabel, southTimerLabel, eastTimerLabel, westTimerLabel;
     @FXML private VBox topVBox;
-    @FXML private Rectangle east_up_road;
-    @FXML private Rectangle south_right_way;
-    @FXML private Rectangle north_left_road;
-    @FXML private Rectangle west_bottom_road;
+    @FXML public Label displayNorthCarCount,displayNorthGreenTime,displayNorthRedTime,displaySouthCarCount;
+    @FXML public Label displaySouthGreenTime,displaySouthRedTime,displayEastCarCount,displayEastGreenTime;
+    @FXML public Label displayEastRedTime,displayWestCarCount,displayWestGreenTime,displayWestRedTime;
 
 
     private Direction currentDirectionForLabelUpdate;
 
     public void initialize() {
+        simulationManager = new SimulationManager();
         vehicleAnimator = new VehicleAnimation(simulationManager);
+        trafficController = new TrafficController();
+        this.timerDisplay = new TimerDisplay(UserInterfaceController.this, trafficController);
+        simulationManager.setTimerDisplay(this.timerDisplay);
+
 
         topVBox.setVisible(true);
         mainPane.setVisible(false);
         startButton.setVisible(false);
         pauseButton.setVisible(false);
         rerunButton.setVisible(false);
-        resetTimerLabels();
+        timerDisplay.resetTimerLabels();
+        timerDisplay.resetLabelDisplay();
 
         isRandom = false;
         simulationIsCurrentlyPaused = false;
@@ -58,16 +73,16 @@ public class UserInterfaceController {
 
         simulationManager.setOnTick(kalanSure -> {
             if (this.currentDirectionForLabelUpdate != null) {
-                labeliGuncelle(this.currentDirectionForLabelUpdate, kalanSure);
+                timerDisplay.labeliGuncelle(this.currentDirectionForLabelUpdate, kalanSure);
             } else {
-                resetTimerLabels();
+                timerDisplay.resetTimerLabels();
             }
         });
 
         simulationManager.setOnPhaseInfoChange(direction -> {
             this.currentDirectionForLabelUpdate = direction;
             if (direction == null) { // Simülasyon durduysa veya hata varsa
-                resetTimerLabels();
+               timerDisplay.resetTimerLabels();
             }
             // Işık renklerini de güncellemek için (Yeşil, Sarı, Kırmızı gösterimi)
             // burada her bir label'ın rengini de SimulationManager'dan alacağımız
@@ -84,7 +99,8 @@ public class UserInterfaceController {
         pauseButton.setVisible(true);
         rerunButton.setVisible(true);
         startButton.setDisable(false);
-        resetTimerLabels();
+
+
         System.out.println("Rastgele araç sayısı modu seçildi.");
     }
 
@@ -111,7 +127,8 @@ public class UserInterfaceController {
             }
         }
         trafficController.updateDurations();
-        labelSureleriniGuncelle();
+        timerDisplay.labelTimerBaslangic();
+        timerDisplay.labelDisplayBaslangic();
 
         topVBox.setVisible(false);
         mainPane.setVisible(true);
@@ -169,47 +186,6 @@ public class UserInterfaceController {
         trafficController.updateDurations();
 
         initialize(); // UI ve bayrakları başlangıç durumuna getir
-    }
-
-    private void labelSureleriniGuncelle() {
-        if (trafficController == null) return;
-        northTimerLabel.setText(trafficController.getGreenDuration(Direction.NORTH) + " sn");
-        eastTimerLabel.setText(trafficController.getGreenDuration(Direction.EAST) + " sn");
-        southTimerLabel.setText(trafficController.getGreenDuration(Direction.SOUTH) + " sn");
-        westTimerLabel.setText(trafficController.getGreenDuration(Direction.WEST) + " sn");
-    }
-
-    private void labeliGuncelle(Direction aktifYon, int sure) {
-        resetTimerLabels();
-        if (aktifYon == null) return;
-
-        // Işığın rengini de göstermek için (opsiyonel)
-        LightPhase phase = simulationManager.getLightPhaseForDirection(aktifYon);
-        String phaseText = " (" + phase.name().substring(0,1) + ")";
-
-        String sureText = (sure >= 0 ? sure : "0") + " sn"; // + phaseText;
-        switch (aktifYon) {
-            case NORTH -> northTimerLabel.setText(sureText);
-            case SOUTH -> southTimerLabel.setText(sureText);
-            case EAST  -> eastTimerLabel.setText(sureText);
-            case WEST  -> westTimerLabel.setText(sureText);
-        }
-    }
-
-    private void resetTimerLabels() {
-        northTimerLabel.setText("—");
-        southTimerLabel.setText("—");
-        eastTimerLabel.setText("—");
-        westTimerLabel.setText("—");
-    }
-
-    public Rectangle getEntryLane(Direction d) {
-        return switch (d) {
-            case NORTH -> north_left_road;
-            case SOUTH -> south_right_way;
-            case EAST  -> east_up_road;
-            case WEST  -> west_bottom_road;
-        };
     }
 
 }

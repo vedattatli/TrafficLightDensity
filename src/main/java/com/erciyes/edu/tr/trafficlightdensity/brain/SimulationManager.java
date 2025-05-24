@@ -1,5 +1,6 @@
 package com.erciyes.edu.tr.trafficlightdensity.brain;
 
+import com.erciyes.edu.tr.trafficlightdensity.intersection_gui.TimerDisplay;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.LightPhase; // Eklendi
 import javafx.animation.KeyFrame;
@@ -13,6 +14,7 @@ import java.util.function.Consumer;
 
 public class SimulationManager {
 
+    private TimerDisplay timerDisplay;
     private final TrafficController trafficController = new TrafficController();
     private final CycleManager cycleManager = new CycleManager(trafficController);
     private Timeline phaseTimeline; // countdownTimeline -> phaseTimeline olarak yeniden adlandırıldı
@@ -27,6 +29,10 @@ public class SimulationManager {
     private Consumer<Integer> onTick; // Kalan süreyi GUI'ye bildirmek için
     private Consumer<Direction> onPhaseInfoChange; // GUI'ye hangi yönün ve fazın aktif olduğunu bildirmek için
 
+    public void setTimerDisplay(TimerDisplay timerDisplay)
+    {
+        this.timerDisplay = timerDisplay;
+    }
     public TrafficController getTrafficController() {
         return trafficController;
     }
@@ -206,13 +212,21 @@ public class SimulationManager {
 
     public void startAutoMode() {
         isAutoMode = true;
+
         Map<Direction, Integer> randomCounts = new HashMap<>();
         Random rand = new Random();
         for (Direction dir : Direction.values()) {
             randomCounts.put(dir, rand.nextInt(30));
         }
+
         trafficController.setVehicleCounts(randomCounts);
         trafficController.updateDurations();
+
+        this.timerDisplay.labelDisplayBaslangic();
+
+
+
+
         startSimulation();
     }
 
