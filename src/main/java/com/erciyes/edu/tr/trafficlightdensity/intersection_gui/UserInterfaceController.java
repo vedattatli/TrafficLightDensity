@@ -11,12 +11,16 @@ import javafx.scene.layout.VBox;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.event.ActionEvent;
+import javafx.scene.shape.Rectangle;
+
 import java.util.List;
 import java.util.Optional;
 
 public class UserInterfaceController {
     TrafficController trafficController = new TrafficController();
     SimulationManager simulationManager = new SimulationManager();
+
+
     VehicleAnimation vehicleAnimator;
 
     boolean isRandom;
@@ -30,6 +34,11 @@ public class UserInterfaceController {
     @FXML private Button rerunButton;
     @FXML private Label northTimerLabel, southTimerLabel, eastTimerLabel, westTimerLabel;
     @FXML private VBox topVBox;
+    @FXML private Rectangle east_up_road;
+    @FXML private Rectangle south_right_way;
+    @FXML private Rectangle north_left_road;
+    @FXML private Rectangle west_bottom_road;
+
 
     private Direction currentDirectionForLabelUpdate;
 
@@ -117,7 +126,6 @@ public class UserInterfaceController {
     private void onStartSimulation(ActionEvent e) {
         System.out.println("Simülasyon başlatılıyor...");
         simulationIsCurrentlyPaused = false;
-        pauseButton.setText("Pause");
         startButton.setDisable(true);
 
         vehicleAnimator.initializeVehicles(trafficController, mainPane); // Güncel trafficController ile araçları oluştur
@@ -140,12 +148,12 @@ public class UserInterfaceController {
         if (simulationIsCurrentlyPaused) {
             simulationManager.resumeSimulation();
             vehicleAnimator.startAnimation(); // Animasyonu da devam ettir
-            pauseButton.setText("Pause");
+            pauseButton.setText("Duraklat");
             simulationIsCurrentlyPaused = false;
         } else {
             simulationManager.pauseSimulation();
             vehicleAnimator.stopAnimation(); // Animasyonu da duraklat (durdur)
-            pauseButton.setText("Resume");
+            pauseButton.setText("Devam et");
             simulationIsCurrentlyPaused = true;
         }
     }
@@ -193,4 +201,14 @@ public class UserInterfaceController {
         eastTimerLabel.setText("—");
         westTimerLabel.setText("—");
     }
+
+    public Rectangle getEntryLane(Direction d) {
+        return switch (d) {
+            case NORTH -> north_left_road;
+            case SOUTH -> south_right_way;
+            case EAST  -> east_up_road;
+            case WEST  -> west_bottom_road;
+        };
+    }
+
 }

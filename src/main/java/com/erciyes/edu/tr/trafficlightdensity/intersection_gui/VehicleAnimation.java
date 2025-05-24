@@ -65,23 +65,27 @@ public class VehicleAnimation {
                 double vehicleSpacing = Vehicle.DEFAULT_LENGTH + Vehicle.SAFE_DISTANCE_BUFFER * 5; // Araçlar arası daha fazla boşluk
 
                 switch (dir) {
-                    case NORTH: // Kuzeye gidecekler, ekranın altından (güneyden) gelir
-                        startX = Vehicle.INTERSECTION_CENTER_X - LANE_OFFSET_FROM_CENTER - Vehicle.DEFAULT_WIDTH / 2;
+                    case NORTH: // Kuzeye gidecekler, ekranın altından (güneyden) gelir – sağ şerit doğru
+                        startX = Vehicle.INTERSECTION_CENTER_X + LANE_OFFSET_FROM_CENTER - Vehicle.DEFAULT_WIDTH / 2;
                         startY = Vehicle.INTERSECTION_CENTER_Y + VEHICLE_QUEUE_START_OFFSET + (i * vehicleSpacing);
                         break;
-                    case SOUTH: // Güneye gidecekler, ekranın üstünden (kuzeyden) gelir
-                        startX = Vehicle.INTERSECTION_CENTER_X + LANE_OFFSET_FROM_CENTER - Vehicle.DEFAULT_WIDTH / 2;
+
+                    case SOUTH: // Güneye gidecekler, ekranın üstünden (kuzeyden) gelir – sağ şeride hizalandı
+                        startX = 550.0;
                         startY = Vehicle.INTERSECTION_CENTER_Y - VEHICLE_QUEUE_START_OFFSET - Vehicle.DEFAULT_LENGTH - (i * vehicleSpacing);
                         break;
-                    case EAST:  // Doğuya gidecekler, ekranın solundan (batıdan) gelir
+
+                    case EAST:  // Doğuya gidecekler, ekranın solundan (batıdan) gelir – sağ şeride hizalandı
                         startX = Vehicle.INTERSECTION_CENTER_X - VEHICLE_QUEUE_START_OFFSET - Vehicle.DEFAULT_LENGTH - (i * vehicleSpacing);
-                        startY = Vehicle.INTERSECTION_CENTER_Y - LANE_OFFSET_FROM_CENTER - Vehicle.DEFAULT_WIDTH / 2;
-                        break;
-                    case WEST:  // Batıya gidecekler, ekranın sağından (doğudan) gelir
-                        startX = Vehicle.INTERSECTION_CENTER_X + VEHICLE_QUEUE_START_OFFSET + (i * vehicleSpacing);
                         startY = Vehicle.INTERSECTION_CENTER_Y + LANE_OFFSET_FROM_CENTER - Vehicle.DEFAULT_WIDTH / 2;
                         break;
+
+                    case WEST:  // Batıya gidecekler, ekranın sağından (doğudan) gelir – sağ şerit doğru
+                        startX = Vehicle.INTERSECTION_CENTER_X + VEHICLE_QUEUE_START_OFFSET + (i * vehicleSpacing);
+                        startY = Vehicle.INTERSECTION_CENTER_Y - LANE_OFFSET_FROM_CENTER - Vehicle.DEFAULT_WIDTH / 2;
+                        break;
                 }
+
                 Vehicle vehicle = new Vehicle(vehicleId, dir, startX, startY);
                 laneVehicles.add(vehicle);
                 this.mainPane.getChildren().add(vehicle.getView());

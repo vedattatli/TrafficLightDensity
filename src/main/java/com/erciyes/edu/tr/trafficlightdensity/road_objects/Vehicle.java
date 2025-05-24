@@ -20,9 +20,9 @@ public class Vehicle {
     // --- KAVŞAK GEOMETRİSİ SABİTLERİ (MUTLAKA KENDİ FXML'İNİZE GÖRE AYARLAYIN!) ---
     // Bu değerler, aracın "ön ucunun" koordinatlarıdır.
     // Kavşağın merkezi ve yolların genişliği.
-    public static final double INTERSECTION_CENTER_X = 300.0; // Örnek: MainPane genişliği 600 ise merkezi
-    public static final double INTERSECTION_CENTER_Y = 250.0; // Örnek: MainPane yüksekliği 500 ise merkezi
-    public static final double ROAD_HALF_WIDTH = 25.0;      // Tek bir yolun yarım genişliği (örn. toplam yol 50 ise)
+    public static final double INTERSECTION_CENTER_X = 545.5; // Örnek: MainPane genişliği 600 ise merkezi
+    public static final double INTERSECTION_CENTER_Y =250.0; // Örnek: MainPane yüksekliği 500 ise merkezi
+    public static final double ROAD_HALF_WIDTH = 590.0;      // Tek bir yolun yarım genişliği (örn. toplam yol 50 ise)
 
     // DURMA ÇİZGİLERİ (Aracın ön ucunun bu çizgide veya biraz gerisinde durması hedeflenir)
     // Bu değerler, kavşağa girmeden hemen önceki çizgilerdir.
@@ -66,8 +66,8 @@ public class Vehicle {
         switch (direction) {
             case NORTH: rectView.setFill(Color.LIGHTCORAL.deriveColor(0, 1.0, 0.8, 1.0)); break;
             case SOUTH: rectView.setFill(Color.LIGHTSKYBLUE.deriveColor(0, 1.0, 0.8, 1.0)); break;
-            case EAST:  rectView.setFill(Color.LIGHTGREEN.deriveColor(0, 1.0, 0.7, 1.0)); break;
-            case WEST:  rectView.setFill(Color.KHAKI.deriveColor(0, 1.0, 0.9, 1.0)); break;
+            case EAST:  rectView.setWidth(DEFAULT_LENGTH); rectView.setHeight(DEFAULT_WIDTH); rectView.setFill(Color.LIGHTGREEN.deriveColor(0, 1.0, 0.7, 1.0)); break;
+            case WEST:  rectView.setWidth(DEFAULT_LENGTH); rectView.setHeight(DEFAULT_WIDTH); rectView.setFill(Color.KHAKI.deriveColor(0, 1.0, 0.9, 1.0)); break;
             default:    rectView.setFill(Color.LIGHTGRAY); break;
         }
         rectView.setStroke(Color.BLACK);
