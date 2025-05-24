@@ -53,7 +53,7 @@ public class UserInterfaceController {
         simulationManager = new SimulationManager();
         vehicleAnimator = new VehicleAnimation(simulationManager);
         trafficController = new TrafficController();
-        this.timerDisplay = new TimerDisplay(this);
+        this.timerDisplay = new TimerDisplay(this, simulationManager);
         simulationManager.setTimerDisplay(this.timerDisplay);
 
 
@@ -68,24 +68,6 @@ public class UserInterfaceController {
         isRandom = false;
         simulationIsCurrentlyPaused = false;
         pauseButton.setText("Pause");
-
-        simulationManager.setOnTick(kalanSure -> {
-            if (this.currentDirectionForLabelUpdate != null) {
-                timerDisplay.labeliGuncelle(this.currentDirectionForLabelUpdate, kalanSure);
-            } else {
-                timerDisplay.resetTimerLabels();
-            }
-        });
-
-        simulationManager.setOnPhaseInfoChange(direction -> {
-            this.currentDirectionForLabelUpdate = direction;
-            if (direction == null) { // Simülasyon durduysa veya hata varsa
-               timerDisplay.resetTimerLabels();
-            }
-            // Işık renklerini de güncellemek için (Yeşil, Sarı, Kırmızı gösterimi)
-            // burada her bir label'ın rengini de SimulationManager'dan alacağımız
-            // LightPhase bilgisine göre ayarlayabiliriz. Bu kısım eklenmedi.
-        });
     }
 
     @FXML

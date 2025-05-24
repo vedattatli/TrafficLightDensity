@@ -1,42 +1,39 @@
 package com.erciyes.edu.tr.trafficlightdensity.intersection_gui;
 
+import com.erciyes.edu.tr.trafficlightdensity.brain.SimulationManager;
 import com.erciyes.edu.tr.trafficlightdensity.brain.TrafficController;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
 
 //Işık fazlarının geri sayımını sayısal olarak gösterir.
 public class TimerDisplay {
     private final UserInterfaceController userInterfaceController;
+    private final SimulationManager simulationManager;
 
 
-    public TimerDisplay(UserInterfaceController userInterfaceController) {
+    private Direction currentDirectionForLabelUpdate;
+
+    public TimerDisplay(UserInterfaceController userInterfaceController, SimulationManager simulationManager) {
         this.userInterfaceController = userInterfaceController;
+        this.simulationManager = simulationManager;
+
+        simulationManager.setOnTick(kalanSure -> {
+            if (this.currentDirectionForLabelUpdate != null) {
+                labelTrafficLightPerSecond(this.currentDirectionForLabelUpdate, kalanSure);
+            } else {
+                resetTimerLabels();
+            }
+        });
+
+        simulationManager.setOnPhaseInfoChange(direction -> {
+            this.currentDirectionForLabelUpdate = direction;
+            if (direction == null) { // Simülasyon durduysa veya hata varsa
+                resetTimerLabels();
+            }
+            // Işık renklerini de güncellemek için (Yeşil, Sarı, Kırmızı gösterimi)
+            // burada her bir label'ın rengini de SimulationManager'dan alacağımız
+            // LightPhase bilgisine göre ayarlayabiliriz. Bu kısım eklenmedi.
+        });
     }
-
-    public void labeliGuncelle(Direction aktifYon, int sure) {
-        resetTimerLabels();
-        if (aktifYon == null) return;
-
-        String sureText = (sure >= 0 ? sure : "0") + " sn"; // + phaseText;
-        switch (aktifYon) {
-            case NORTH -> {
-                userInterfaceController.northTimerLabel.setText(sureText);
-
-            }
-            case SOUTH -> {
-                userInterfaceController.southTimerLabel.setText(sureText);
-
-            }
-            case EAST -> {
-                userInterfaceController.eastTimerLabel.setText(sureText);
-
-            }
-            case WEST -> {
-                userInterfaceController.westTimerLabel.setText(sureText);
-
-            }
-        }
-    }
-
 
     public void labelTimerBaslangic(TrafficController trafficController) {
 
@@ -71,7 +68,6 @@ public class TimerDisplay {
         userInterfaceController.displayWestRedTime.setText(calculateRedDuration(Direction.WEST, trafficController));
         userInterfaceController.displayNorthRedTime.setText(calculateRedDuration(Direction.NORTH, trafficController));
         userInterfaceController.displaySouthRedTime.setText(calculateRedDuration(Direction.SOUTH, trafficController));
-
     }
 
     public void resetLabelDisplay() {
@@ -101,10 +97,10 @@ public class TimerDisplay {
 
         int yellowDuration = TrafficController.YELLOW_DURATION;
         int totalCycleTime = TrafficController.TOTAL_CYCLE_TIME;
-        String northRedDuration = String.valueOf(totalCycleTime - northGreenDuration - (4 * yellowDuration));
-        String eastRedDuration = String.valueOf(totalCycleTime - eastGreenDuration - ( 4 * yellowDuration));
-        String southRedDuration = String.valueOf(totalCycleTime - southGreenDuration - (4 * yellowDuration));
-        String westRedDuration = String.valueOf(totalCycleTime - westGreenDuration - (4 * yellowDuration));
+        String northRedDuration = String.valueOf(totalCycleTime - northGreenDuration -  yellowDuration);
+        String eastRedDuration = String.valueOf(totalCycleTime - eastGreenDuration - yellowDuration);
+        String southRedDuration = String.valueOf(totalCycleTime - southGreenDuration - yellowDuration);
+        String westRedDuration = String.valueOf(totalCycleTime - westGreenDuration - yellowDuration);
 
         if (direction.equals(Direction.NORTH)) return northRedDuration;
         else if (direction.equals(Direction.SOUTH)) return southRedDuration;
@@ -112,4 +108,50 @@ public class TimerDisplay {
         else if (direction.equals(Direction.WEST)) return  westRedDuration;
         return ("0");
     }
+
+    public void labelTrafficLightPerSecond(Direction aktifYon, int sure) {
+        resetTimerLabels();
+        if (aktifYon == null) return;
+
+        String sureText = (sure >= 0 ? sure : "0") + " sn";
+        switch (aktifYon) {
+            case NORTH -> {
+                userInterfaceController.northTimerLabel.setText(sureText);
+            }
+            case SOUTH -> {
+                userInterfaceController.southTimerLabel.setText(sureText);
+            }
+            case EAST -> {
+                userInterfaceController.eastTimerLabel.setText(sureText);
+            }
+            case WEST -> {
+                userInterfaceController.westTimerLabel.setText(sureText);
+            }
+        }
+    }
+
+     public void labelRedUpdatePerSecond(Direction aktifYon, int sure)
+     {
+         String sureText = (sure >= 0 ? sure : "0") + " sn";
+         switch (aktifYon)
+         {
+             case NORTH ->
+             {
+                userInterfaceController.displayNorthRedTime.setText(sureText);
+             }
+             case SOUTH ->
+             {
+
+             }
+             case EAST ->
+             {
+
+             }
+             case WEST ->
+             {
+
+             }
+
+         }
+     }
 }
