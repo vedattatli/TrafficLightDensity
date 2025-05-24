@@ -8,8 +8,8 @@ import java.util.Map;
 // Sensörlerden gelen yoğunluk verisiyle her yöne yeşil süresi hesaplar.
 public class TrafficController {
 
-    private final int TOTAL_CYCLE_TIME = 120;
-    private final int YELLOW_DURATION = 3;
+    public final static int TOTAL_CYCLE_TIME = 120;
+    public final static int YELLOW_DURATION = 3;
 
     Map<Direction, Integer> vehicleCount;
     HashMap<Direction, Integer> greenDurations;

@@ -14,7 +14,7 @@ public class Vehicle {
     // --- Araçların Sabit Özellikleri ---
     public static final double DEFAULT_LENGTH = 30.0;
     public static final double DEFAULT_WIDTH = 15.0;
-    public static final double DEFAULT_INITIAL_SPEED = 1.0; // Animasyon tick'i başına piksel
+    public static final double DEFAULT_INITIAL_SPEED = 2.0; // Animasyon tick'i başına piksel
     public static final double SAFE_DISTANCE_BUFFER = 10.0; // Araçlar arası minimum boşluk (biraz artırıldı)
 
     // --- KAVŞAK GEOMETRİSİ SABİTLERİ (MUTLAKA KENDİ FXML'İNİZE GÖRE AYARLAYIN!) ---
@@ -193,25 +193,23 @@ public class Vehicle {
 
     /** Aracın durma çizgisine ulaşıp ulaşmadığını veya geçip geçmediğini kontrol eder. */
     private boolean isBeforeStoppingLineAndNotAtIt() {
-        switch (direction) {
-            case NORTH: return currentY > STOP_LINE_NORTH_Y + currentSpeed; // Biraz pay bırak
-            case SOUTH: return currentY < STOP_LINE_SOUTH_Y - currentSpeed;
-            case WEST:  return currentX > STOP_LINE_WEST_X + currentSpeed;
-            case EAST:  return currentX < STOP_LINE_EAST_X - currentSpeed;
-        }
-        return false;
+        return switch (direction) {
+            case NORTH -> currentY > STOP_LINE_NORTH_Y + currentSpeed; // Biraz pay bırak
+            case SOUTH -> currentY < STOP_LINE_SOUTH_Y - currentSpeed;
+            case WEST -> currentX > STOP_LINE_WEST_X + currentSpeed;
+            case EAST -> currentX < STOP_LINE_EAST_X - currentSpeed;
+        };
     }
 
     /** Aracın tam durma çizgisinde olup olmadığını kontrol eder (ön ucu). */
     private boolean isAtStoppingLine() {
         double tolerance = DEFAULT_INITIAL_SPEED / 2; // Yarım hız kadar tolerans
-        switch (direction) {
-            case NORTH: return Math.abs(currentY - STOP_LINE_NORTH_Y) < tolerance;
-            case SOUTH: return Math.abs(currentY - STOP_LINE_SOUTH_Y) < tolerance;
-            case WEST:  return Math.abs(currentX - STOP_LINE_WEST_X) < tolerance;
-            case EAST:  return Math.abs(currentX - STOP_LINE_EAST_X) < tolerance;
-        }
-        return false;
+        return switch (direction) {
+            case NORTH -> Math.abs(currentY - STOP_LINE_NORTH_Y) < tolerance;
+            case SOUTH -> Math.abs(currentY - STOP_LINE_SOUTH_Y) < tolerance;
+            case WEST -> Math.abs(currentX - STOP_LINE_WEST_X) < tolerance;
+            case EAST -> Math.abs(currentX - STOP_LINE_EAST_X) < tolerance;
+        };
     }
 
     /** Aracın durma çizgisine yaklaşıp yaklaşmadığını kontrol eder. */
