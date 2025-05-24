@@ -128,14 +128,15 @@ public class UserInterfaceController {
         simulationIsCurrentlyPaused = false;
         startButton.setDisable(true);
 
-        vehicleAnimator.initializeVehicles(trafficController, mainPane); // Güncel trafficController ile araçları oluştur
-        vehicleAnimator.startAnimation(); // Animasyonu başlat
-
+        TrafficController activeTrafficController;
         if (isRandom) {
             simulationManager.startAutoMode();
         } else {
-            simulationManager.startManualMode(trafficController.getVehicleCounts()); // Bu, trafficController'ı günceller
+            simulationManager.startManualMode(this.trafficController.getVehicleCounts()); // Bu, trafficController'ı günceller
         }
+        activeTrafficController = simulationManager.getTrafficController();
+        vehicleAnimator.initializeVehicles(activeTrafficController, mainPane); // Güncel trafficController ile araçları oluştur
+        vehicleAnimator.startAnimation(); // Animasyonu başlat
     }
 
     @FXML

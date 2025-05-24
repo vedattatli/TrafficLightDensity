@@ -27,6 +27,10 @@ public class SimulationManager {
     private Consumer<Integer> onTick; // Kalan süreyi GUI'ye bildirmek için
     private Consumer<Direction> onPhaseInfoChange; // GUI'ye hangi yönün ve fazın aktif olduğunu bildirmek için
 
+    public TrafficController getTrafficController() {
+        return trafficController;
+    }
+
     public SimulationManager() {
         // Başlangıçta tüm ışıkları kırmızı yap
         for (Direction dir : Direction.values()) {
