@@ -10,6 +10,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.event.ActionEvent;
+import javafx.scene.shape.Circle;
+
 import java.util.*;
 
 public class UserInterfaceController {
@@ -45,6 +47,9 @@ public class UserInterfaceController {
     @FXML public Label displayNorthCarCount,displayNorthGreenTime,displayNorthRedTime,displaySouthCarCount;
     @FXML public Label displaySouthGreenTime,displaySouthRedTime,displayEastCarCount,displayEastGreenTime;
     @FXML public Label displayEastRedTime,displayWestCarCount,displayWestGreenTime,displayWestRedTime;
+    @FXML public Circle greenLightUp,greenLightRight,greenLightLeft,greenLightDown;
+    @FXML public Circle yellowLightUp,yellowLightRight,yellowLightLeft,yellowLightDown;
+    @FXML public Circle redLightUp,redLightRight,redLightLeft,redLightDown;
 
 
     private Direction currentDirectionForLabelUpdate;

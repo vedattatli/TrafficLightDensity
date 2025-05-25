@@ -1,6 +1,8 @@
 package com.erciyes.edu.tr.trafficlightdensity.brain;
 
 import com.erciyes.edu.tr.trafficlightdensity.intersection_gui.TimerDisplay;
+import com.erciyes.edu.tr.trafficlightdensity.intersection_gui.TrafficLightColorUpdater;
+import com.erciyes.edu.tr.trafficlightdensity.intersection_gui.UserInterfaceController;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.LightPhase; // Eklendi
 import javafx.animation.KeyFrame;
@@ -14,13 +16,20 @@ import java.util.function.Consumer;
 
 public class SimulationManager {
 
+    UserInterfaceController UserInterfaceController;
     private TimerDisplay timerDisplay;
     private final TrafficController trafficController = new TrafficController();
     private final CycleManager cycleManager = new CycleManager(trafficController);
     private Timeline phaseTimeline; // countdownTimeline -> phaseTimeline olarak yeniden adlandırıldı
     private boolean isAutoMode = false;
     private boolean isRunning = false;
+
+    public void setUserInterfaceController(UserInterfaceController userInterfaceController) {
+        UserInterfaceController = userInterfaceController;
+    }
+
     private boolean isPaused = false;
+    private final TrafficLightColorUpdater lightColorUpdater = new TrafficLightColorUpdater();
 
     // Her yön için mevcut ışık fazını tutar
     private Map<Direction, LightPhase> currentLightPhases = new HashMap<>();
@@ -118,6 +127,9 @@ public class SimulationManager {
         if (finishedPhase == LightPhase.GREEN) {
             // Yeşil bitti, aynı yön için Sarı'yı başlat
             System.out.println(this.currentlyActiveDirection+ " için Sarı Faz başlıyor.");
+            setUserInterfaceController(UserInterfaceController);
+            lightColorUpdater.updateTrafficLightsColors(this.currentLightPhases, UserInterfaceController);
+
             runPhaseTimer((int) LightPhase.getDefaultPhaseDuration(LightPhase.YELLOW).getSeconds(), LightPhase.YELLOW);
         } else if (finishedPhase == LightPhase.YELLOW) {
             // Sarı bitti, bu yönü Kırmızı yap
