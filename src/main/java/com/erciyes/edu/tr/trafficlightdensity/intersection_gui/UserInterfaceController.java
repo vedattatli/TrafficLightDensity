@@ -56,6 +56,7 @@ public class UserInterfaceController {
 
     public void initialize() {
         simulationManager = new SimulationManager();
+        simulationManager.setUserInterfaceController(this);
         vehicleAnimator = new VehicleAnimation(simulationManager);
         trafficController = new TrafficController();
         this.timerDisplay = new TimerDisplay(this, simulationManager);

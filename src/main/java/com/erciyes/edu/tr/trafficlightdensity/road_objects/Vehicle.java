@@ -55,9 +55,12 @@ public class Vehicle {
         // Eğer kavşaktaysak ışığa bakma – daima git
         if (inIntersection) {
             speed = DEFAULT_SPEED;
-        } else {
-            speed = (phase == LightPhase.GREEN) ? DEFAULT_SPEED : 0;
-        }
+        } else if (phase == LightPhase.GREEN)
+        {
+            speed = DEFAULT_SPEED;
+        } else if (phase == LightPhase.YELLOW) {
+            speed = DEFAULT_SPEED / 1.5;
+        }else speed = 0;
 
         switch (direction) {
             case NORTH -> y -= speed;

@@ -9,7 +9,7 @@ import java.util.Map;
 public class TrafficController {
 
     public final static int TOTAL_CYCLE_TIME = 20;
-    public final static int YELLOW_DURATION = 3;
+    public final static int YELLOW_DURATION = 2;
 
     Map<Direction, Integer> vehicleCount;
     HashMap<Direction, Integer> greenDurations;
