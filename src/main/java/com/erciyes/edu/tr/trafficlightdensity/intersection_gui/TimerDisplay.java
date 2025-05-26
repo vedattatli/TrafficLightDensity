@@ -124,29 +124,4 @@ public class TimerDisplay {
             }
         }
     }
-
-     public void labelRedUpdatePerSecond(Direction aktifYon, int sure)
-     {
-         String sureText = (sure >= 0 ? sure : "0") + " sn";
-         switch (aktifYon)
-         {
-             case NORTH ->
-             {
-                userInterfaceController.displayNorthRedTime.setText(sureText);
-             }
-             case SOUTH ->
-             {
-
-             }
-             case EAST ->
-             {
-
-             }
-             case WEST ->
-             {
-
-             }
-
-         }
-     }
 }

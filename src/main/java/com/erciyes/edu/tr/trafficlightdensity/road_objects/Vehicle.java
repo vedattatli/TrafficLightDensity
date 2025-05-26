@@ -4,8 +4,6 @@ import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import java.util.concurrent.ThreadLocalRandom;
-import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
-import com.erciyes.edu.tr.trafficlightdensity.road_objects.LightPhase;
 
 /**
  * Basit araç sınıfı.
