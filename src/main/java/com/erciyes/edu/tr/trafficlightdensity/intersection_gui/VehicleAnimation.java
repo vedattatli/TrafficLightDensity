@@ -9,42 +9,25 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
-
 import java.util.*;
 
-/* ───────────────────────────── Constants ───────────────────────────── */
-/*  Bu bölümde kavşağın geometrisi ve animasyon için sabit kullanılan
-    değerler tanımlanır.  */
 public final class VehicleAnimation {
 
-    /* Araçlar arası boşluk: 1 araç boyu + 2 araç genişliği (tampon mesafe). */
-    private static final double GAP_BETWEEN  =
-            Vehicle.DEFAULT_LENGTH + Vehicle.DEFAULT_WIDTH * 2.0;
+    // Artırılmış kuyruk boşluğu: çarpışmayı önlemek için
+    private static final double GAP_BETWEEN = 60.0;
 
-    /* ─────────────────────────── Fields ──────────────────────────────── */
-    /* Her yön (N,E,S,W) için bağlı araç listesi tutulur. */
-    private final Map<Direction, List<Vehicle>> laneVehicles =
-            new EnumMap<>(Direction.class);
+    private final Map<Direction, List<Vehicle>> laneVehicles = new EnumMap<>(Direction.class);
+    private final SimulationManager simManager;
+    private final AnimationTimer    timer;
 
-    private final SimulationManager simManager;    // Işık fazları buradan alınır
-    private final AnimationTimer    timer;         // JavaFX animasyon döngüsü
-
-    private Pane canvas;           // Araçların çizildiği ana panel
+    private Pane canvas;
     private boolean active = false;
 
-    /* Dört görünmez sensör (kavşak giriş çizgileri). */
-    private Circle sensorNorth;
-    private Circle sensorSouth;
-    private Circle sensorEast;
-    private Circle sensorWest;
+    private Circle sensorNorth, sensorSouth, sensorEast, sensorWest;
 
-    /* ───────────────────────── Constructor ──────────────────────────── */
     public VehicleAnimation(SimulationManager simManager) {
         this.simManager = simManager;
         for (Direction d : Direction.values()) laneVehicles.put(d, new ArrayList<>());
-
-        /* Her karede handle() çağrılır; simülasyon durmadıysa
-           araçların konumu güncellenir. */
         timer = new AnimationTimer() {
             @Override public void handle(long now) {
                 if (active && simManager.isRunning() && !simManager.isPaused()) {
@@ -54,25 +37,16 @@ public final class VehicleAnimation {
         };
     }
 
-    /* ───────────────────────── Public API ───────────────────────────── */
-    /** Kuyrukları oluştur ve sensörleri yerleştir. */
     public void initializeVehicles(TrafficController controller, Pane canvas) {
-        clearAllVehicles();        // Önce eski nesneleri temizle
+        clearAllVehicles();
         this.canvas = canvas;
-        if (canvas == null) {
-            System.err.println("Canvas NULL – çizim yapılamadı!");
-            return;
-        }
-        addSensors();              // Görünmez sensörleri ekle
+        if (canvas == null) return;
+        addSensors();
         controller.getVehicleCounts().forEach(this::createQueueForLane);
     }
 
-    /** Animasyonu başlat. */
-    public void startAnimation()  { if (!active) { active = true;  timer.start(); } }
-    /** Animasyonu durdur. */
-    public void stopAnimation()   { if (active)  { active = false; timer.stop();  } }
-
-    /** Tüm araç ve sensörleri sahneden/bellekten sil. */
+    public void startAnimation() { if (!active) { active = true; timer.start(); } }
+    public void stopAnimation()  { if (active)  { active = false; timer.stop(); } }
     public void clearAllVehicles() {
         stopAnimation();
         if (canvas != null) {
@@ -80,10 +54,7 @@ public final class VehicleAnimation {
                     .flatMap(List::stream)
                     .map(Vehicle::getView)
                     .forEach(canvas.getChildren()::remove);
-
-            canvas.getChildren().removeAll(
-                    sensorNorth, sensorSouth, sensorEast, sensorWest
-            );
+            canvas.getChildren().removeAll(sensorNorth, sensorSouth, sensorEast, sensorWest);
         }
         laneVehicles.values().forEach(List::clear);
         sensorNorth = sensorSouth = sensorEast = sensorWest = null;
@@ -118,31 +89,16 @@ public final class VehicleAnimation {
 
     /* ───────────────────── Queue Builders ───────────────────────────── */
     /** Verilen yöne (lane) istenen adet araç ekler. */
+
     private void createQueueForLane(Direction dir, int count) {
         List<Vehicle> list = laneVehicles.get(dir);
         double baseX = 0, baseY = 0;
-
-        /* İlk aracın koordinatı – şerit/geçiş yönüne göre. */
         switch (dir) {
-            case NORTH -> {
-                baseX = 637;
-                baseY = 559;
-            }
-            case SOUTH -> {
-                baseX = 550;
-                baseY = -100;
-            }
-            case EAST -> {
-                baseX = 29;
-                baseY = 255;
-            }
-            case WEST -> {
-                baseX = 1174;
-                baseY = 180;
-            }
+            case NORTH -> { baseX = 637; baseY = 559; }
+            case SOUTH -> { baseX = 550; baseY = -100; }
+            case EAST  -> { baseX = 29;  baseY = 255; }
+            case WEST  -> { baseX = 1174; baseY = 180; }
         }
-
-        /* Kuyruk oluştur: her sonraki araç sabit aralıkla ofsetlenir. */
         for (int i = 0; i < count; i++) {
             double x = baseX, y = baseY;
             switch (dir) {
@@ -157,20 +113,12 @@ public final class VehicleAnimation {
         }
     }
 
-    /* ───────────────────── Main Animation Loop ─────────────────────── */
-    /** Her kare çağrılır: araçlar ilerletilir, sensör/kaldırma kontrolleri yapılır. */
     private void processFrame() {
-        /* 1. Işık rengine göre araçları hareket ettir. */
         laneVehicles.forEach((dir, list) ->
                 list.forEach(v -> v.move(simManager.getLightPhaseForDirection(dir))));
-
-        /* 2. Araç sensöre girdiyse kavşakta olduğunu işaretle. */
         laneVehicles.values().forEach(list -> list.forEach(this::checkSensorIntersection));
-
-        /* 3. Ekran dışına çıkanları temizle. */
         laneVehicles.values().forEach(list -> list.removeIf(this::outOfCanvas));
     }
-
     /* ───────────────────── Helper Methods ─────────────────────────── */
     /** Araç sensöre temas ediyorsa kavşağa girdi olarak işaretle. */
     private void checkSensorIntersection(Vehicle v) {

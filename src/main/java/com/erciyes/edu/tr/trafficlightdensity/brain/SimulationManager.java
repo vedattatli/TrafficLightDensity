@@ -5,17 +5,15 @@ import com.erciyes.edu.tr.trafficlightdensity.intersection_gui.TrafficLightColor
 import com.erciyes.edu.tr.trafficlightdensity.intersection_gui.UserInterfaceController;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.LightPhase;
-import javafx.animation.KeyFrame;                // EKLENDİ
-import javafx.animation.Timeline;               // EKLENDİ
-import javafx.util.Duration;                    // EKLENDİ
-
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.Consumer;
 
 public class SimulationManager {
-
     private UserInterfaceController userInterfaceController;
     private TimerDisplay timerDisplay;
     private final TrafficController trafficController = new TrafficController();
@@ -34,7 +32,6 @@ public class SimulationManager {
     private Consumer<Direction> onPhaseInfoChange;
 
     public SimulationManager() {
-        // Başlangıçta tüm ışıkları kırmızı yap
         for (Direction dir : Direction.values()) {
             currentLightPhases.put(dir, LightPhase.RED);
         }
@@ -43,19 +40,15 @@ public class SimulationManager {
     public void setUserInterfaceController(UserInterfaceController ui) {
         this.userInterfaceController = ui;
     }
-
     public void setTimerDisplay(TimerDisplay timerDisplay) {
         this.timerDisplay = timerDisplay;
     }
-
     public TrafficController getTrafficController() {
         return trafficController;
     }
-
     public void setOnTick(Consumer<Integer> tickCallback) {
         this.onTick = tickCallback;
     }
-
     public void setOnPhaseInfoChange(Consumer<Direction> phaseInfoCallback) {
         this.onPhaseInfoChange = phaseInfoCallback;
     }
@@ -65,7 +58,7 @@ public class SimulationManager {
         isPaused  = false;
         cycleManager.startCycle();
 
-        // ─────────── Başlangıçta herkes kırmızı ───────────
+        // Başlangıçta herkes kırmızı
         for (Direction d : Direction.values()) {
             currentLightPhases.put(d, LightPhase.RED);
         }
@@ -73,21 +66,19 @@ public class SimulationManager {
             lightColorUpdater.resetTrafficLightsColors(userInterfaceController);
         }
         if (onPhaseInfoChange != null) {
-            onPhaseInfoChange.accept(null); // Hiçbir yön aktif değil: hepsi kırmızı
+            onPhaseInfoChange.accept(null);
         }
-        // ───────────► 2 saniye sonra ilk yeşil faza geç ◄───────────
-        Timeline initialRed = new Timeline(new KeyFrame(Duration.seconds(2), e -> startGreenPhase()));
+
+        // 4 saniye sonra ilk yeşil faza geç
+        Timeline initialRed = new Timeline(new KeyFrame(Duration.seconds(4), e -> startGreenPhase()));
         initialRed.setCycleCount(1);
         initialRed.play();
     }
 
     private void startGreenPhase() {
-        // İlk yeşil faz mantığı (önceki startSimulation içeriği)
         currentlyActiveDirection = cycleManager.getCurrentDirection();
         int greenDuration = cycleManager.getCurrentDuration();
-
         System.out.println("Simülasyon başlatılıyor: " + currentlyActiveDirection + " Yeşil Fazı ile.");
-
         for (Direction dir : Direction.values()) {
             currentLightPhases.put(dir,
                     (dir == currentlyActiveDirection) ? LightPhase.GREEN : LightPhase.RED
