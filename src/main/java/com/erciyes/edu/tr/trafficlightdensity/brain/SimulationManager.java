@@ -5,9 +5,9 @@ import com.erciyes.edu.tr.trafficlightdensity.intersection_gui.TrafficLightColor
 import com.erciyes.edu.tr.trafficlightdensity.intersection_gui.UserInterfaceController;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.LightPhase;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.util.Duration;
+import javafx.animation.KeyFrame;                // EKLENDİ
+import javafx.animation.Timeline;               // EKLENDİ
+import javafx.util.Duration;                    // EKLENDİ
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,62 +16,86 @@ import java.util.function.Consumer;
 
 public class SimulationManager {
 
-    /** UI katmanından enjekte edilen controller; NPE’yi engellemek için null-kontrollü kullanılıyor. */
     private UserInterfaceController userInterfaceController;
-
     private TimerDisplay timerDisplay;
     private final TrafficController trafficController = new TrafficController();
-    private final CycleManager   cycleManager      = new CycleManager(trafficController);
+    private final CycleManager cycleManager           = new CycleManager(trafficController);
     private final TrafficLightColorUpdater lightColorUpdater = new TrafficLightColorUpdater();
 
     private Timeline phaseTimeline;
-    private boolean  isAutoMode = false;
-    private boolean  isRunning  = false;
-    private boolean  isPaused   = false;
+    private boolean isAutoMode = false;
+    private boolean isRunning  = false;
+    private boolean isPaused   = false;
 
-    private Map<Direction, LightPhase> currentLightPhases = new HashMap<>();
-    private Direction  currentlyActiveDirection;
+    private final Map<Direction, LightPhase> currentLightPhases = new HashMap<>();
+    private Direction currentlyActiveDirection;
 
-    private Consumer<Integer>  onTick;
+    private Consumer<Integer>   onTick;
     private Consumer<Direction> onPhaseInfoChange;
 
     public SimulationManager() {
+        // Başlangıçta tüm ışıkları kırmızı yap
         for (Direction dir : Direction.values()) {
             currentLightPhases.put(dir, LightPhase.RED);
         }
     }
 
-    public void setUserInterfaceController(UserInterfaceController userInterfaceController) {
-        this.userInterfaceController = userInterfaceController;
+    public void setUserInterfaceController(UserInterfaceController ui) {
+        this.userInterfaceController = ui;
     }
 
-    public void setTimerDisplay(TimerDisplay timerDisplay) { this.timerDisplay = timerDisplay; }
-    public TrafficController getTrafficController()        { return trafficController; }
+    public void setTimerDisplay(TimerDisplay timerDisplay) {
+        this.timerDisplay = timerDisplay;
+    }
 
-    public void setOnTick(Consumer<Integer> tickCallback)                { this.onTick = tickCallback; }
-    public void setOnPhaseInfoChange(Consumer<Direction> phaseCallback)  { this.onPhaseInfoChange = phaseCallback; }
+    public TrafficController getTrafficController() {
+        return trafficController;
+    }
 
-    /* ------------------ SİMÜLASYON AKIŞI ------------------ */
+    public void setOnTick(Consumer<Integer> tickCallback) {
+        this.onTick = tickCallback;
+    }
+
+    public void setOnPhaseInfoChange(Consumer<Direction> phaseInfoCallback) {
+        this.onPhaseInfoChange = phaseInfoCallback;
+    }
 
     public void startSimulation() {
         isRunning = true;
         isPaused  = false;
-
         cycleManager.startCycle();
+
+        // ─────────── Başlangıçta herkes kırmızı ───────────
+        for (Direction d : Direction.values()) {
+            currentLightPhases.put(d, LightPhase.RED);
+        }
+        if (userInterfaceController != null) {
+            lightColorUpdater.resetTrafficLightsColors(userInterfaceController);
+        }
+        if (onPhaseInfoChange != null) {
+            onPhaseInfoChange.accept(null); // Hiçbir yön aktif değil: hepsi kırmızı
+        }
+        // ───────────► 2 saniye sonra ilk yeşil faza geç ◄───────────
+        Timeline initialRed = new Timeline(new KeyFrame(Duration.seconds(2), e -> startGreenPhase()));
+        initialRed.setCycleCount(1);
+        initialRed.play();
+    }
+
+    private void startGreenPhase() {
+        // İlk yeşil faz mantığı (önceki startSimulation içeriği)
         currentlyActiveDirection = cycleManager.getCurrentDirection();
         int greenDuration = cycleManager.getCurrentDuration();
 
         System.out.println("Simülasyon başlatılıyor: " + currentlyActiveDirection + " Yeşil Fazı ile.");
 
-        for (Direction d : Direction.values()) {
-            currentLightPhases.put(d, (d == currentlyActiveDirection) ? LightPhase.GREEN : LightPhase.RED);
+        for (Direction dir : Direction.values()) {
+            currentLightPhases.put(dir,
+                    (dir == currentlyActiveDirection) ? LightPhase.GREEN : LightPhase.RED
+            );
         }
-        if (userInterfaceController != null) {
-            lightColorUpdater.updateTrafficLightsColors(currentLightPhases, userInterfaceController);
+        if (onPhaseInfoChange != null) {
+            onPhaseInfoChange.accept(currentlyActiveDirection);
         }
-
-        if (onPhaseInfoChange != null) onPhaseInfoChange.accept(currentlyActiveDirection);
-
         runPhaseTimer(greenDuration, LightPhase.GREEN);
     }
 
@@ -81,22 +105,35 @@ public class SimulationManager {
         currentLightPhases.put(currentlyActiveDirection, phaseForActiveDirection);
         if (phaseForActiveDirection == LightPhase.GREEN || phaseForActiveDirection == LightPhase.YELLOW) {
             for (Direction d : Direction.values()) {
-                if (d != currentlyActiveDirection) currentLightPhases.put(d, LightPhase.RED);
+                if (d != currentlyActiveDirection) {
+                    currentLightPhases.put(d, LightPhase.RED);
+                }
             }
         }
-        if (userInterfaceController != null)
-            lightColorUpdater.updateTrafficLightsColors(currentLightPhases, userInterfaceController);
-        if (phaseTimeline != null) phaseTimeline.stop();
 
-        final int[] timeLeft = { durationSeconds };
-        if (onTick != null) onTick.accept(timeLeft[0]);
+        if (userInterfaceController != null) {
+            lightColorUpdater.updateTrafficLightsColors(currentLightPhases, userInterfaceController);
+        }
+
+        if (phaseTimeline != null) {
+            phaseTimeline.stop();
+        }
+
+        final int[] timeLeft = {durationSeconds};
+        if (onTick != null) {
+            onTick.accept(timeLeft[0]);
+        }
 
         phaseTimeline = new Timeline(
                 new KeyFrame(Duration.seconds(1), e -> {
                     if (!isRunning || isPaused) return;
                     timeLeft[0]--;
-                    if (onTick != null && timeLeft[0] >= 0) onTick.accept(timeLeft[0]);
-                    if (timeLeft[0] < 0) handlePhaseTimerEnd(phaseForActiveDirection);
+                    if (onTick != null && timeLeft[0] >= 0) {
+                        onTick.accept(timeLeft[0]);
+                    }
+                    if (timeLeft[0] < 0) {
+                        handlePhaseTimerEnd(phaseForActiveDirection);
+                    }
                 })
         );
         phaseTimeline.setCycleCount(durationSeconds + 1);
@@ -108,13 +145,15 @@ public class SimulationManager {
 
         if (finishedPhase == LightPhase.GREEN) {
             System.out.println(currentlyActiveDirection + " için Sarı Faz başlıyor.");
-
-            lightColorUpdater.updateTrafficLightsColors(currentLightPhases, userInterfaceController);
-
-            runPhaseTimer((int) LightPhase.getDefaultPhaseDuration(LightPhase.YELLOW).getSeconds(),
-                    LightPhase.YELLOW);
-
-        } else if (finishedPhase == LightPhase.YELLOW) {
+            if (userInterfaceController != null) {
+                lightColorUpdater.updateTrafficLightsColors(currentLightPhases, userInterfaceController);
+            }
+            runPhaseTimer(
+                    (int) LightPhase.getDefaultPhaseDuration(LightPhase.YELLOW).getSeconds(),
+                    LightPhase.YELLOW
+            );
+        }
+        else if (finishedPhase == LightPhase.YELLOW) {
             System.out.println(currentlyActiveDirection + " için Kırmızı Faz başlıyor.");
             currentLightPhases.put(currentlyActiveDirection, LightPhase.RED);
             processNextInCycle();
@@ -123,7 +162,6 @@ public class SimulationManager {
 
     private void processNextInCycle() {
         if (!isRunning) return;
-
         if (!isAutoMode && cycleManager.isEndOfCycle()) {
             System.out.println("Manuel mod: Tam döngü tamamlandı. Simülasyon durduruluyor.");
             stopSimulation();
@@ -131,54 +169,58 @@ public class SimulationManager {
             if (onTick != null) onTick.accept(0);
             return;
         }
-
         cycleManager.switchToNextDirection();
         currentlyActiveDirection = cycleManager.getCurrentDirection();
-        int nextGreenDuration = cycleManager.getCurrentDuration();
-
         if (currentlyActiveDirection == null) {
             System.err.println("SimulationManager Hata: Bir sonraki yön null. Simülasyon durduruluyor.");
             stopSimulation();
             return;
         }
-
-        System.out.println("Sıradaki Yeşil Faz: " + currentlyActiveDirection +
-                ", Süre: " + nextGreenDuration + "sn");
-
-        for (Direction d : Direction.values()) {
-            currentLightPhases.put(d, (d == currentlyActiveDirection) ? LightPhase.GREEN : LightPhase.RED);
+        int nextGreenDuration = cycleManager.getCurrentDuration();
+        System.out.println("Sıradaki Yeşil Faz: " + currentlyActiveDirection + ", Süre: " + nextGreenDuration + "sn");
+        for (Direction dir : Direction.values()) {
+            currentLightPhases.put(dir,
+                    (dir == currentlyActiveDirection) ? LightPhase.GREEN : LightPhase.RED
+            );
         }
-
-        if (userInterfaceController != null) {
-            lightColorUpdater.updateTrafficLightsColors(currentLightPhases, userInterfaceController);
+        if (onPhaseInfoChange != null) {
+            onPhaseInfoChange.accept(currentlyActiveDirection);
         }
-
-        if (onPhaseInfoChange != null) onPhaseInfoChange.accept(currentlyActiveDirection);
-
         runPhaseTimer(nextGreenDuration, LightPhase.GREEN);
     }
-
-    /* ------------------ KONTROL METOTLARI ------------------ */
 
     public void stopSimulation() {
         if (!isRunning && !isPaused) return;
         isRunning = false;
         isPaused  = false;
-
         if (phaseTimeline != null) {
             phaseTimeline.stop();
             phaseTimeline = null;
         }
-        for (Direction d : Direction.values()) currentLightPhases.put(d, LightPhase.RED);
+        for (Direction dir : Direction.values()) {
+            currentLightPhases.put(dir, LightPhase.RED);
+        }
         currentlyActiveDirection = null;
-
         System.out.println("Simülasyon durduruldu.");
         if (onPhaseInfoChange != null) onPhaseInfoChange.accept(null);
         if (onTick != null) onTick.accept(0);
     }
 
-    public void pauseSimulation()  { if (isRunning && !isPaused) { isPaused = true;  if (phaseTimeline != null) phaseTimeline.pause();  System.out.println("Simülasyon duraklatıldı."); } }
-    public void resumeSimulation() { if (isRunning &&  isPaused) { isPaused = false; if (phaseTimeline != null) phaseTimeline.play();   System.out.println("Simülasyon devam ettiriliyor."); } }
+    public void pauseSimulation() {
+        if (isRunning && !isPaused) {
+            isPaused = true;
+            if (phaseTimeline != null) phaseTimeline.pause();
+            System.out.println("Simülasyon duraklatıldı.");
+        }
+    }
+
+    public void resumeSimulation() {
+        if (isRunning && isPaused) {
+            isPaused = false;
+            if (phaseTimeline != null) phaseTimeline.play();
+            System.out.println("Simülasyon devam ettiriliyor.");
+        }
+    }
 
     public boolean isRunning() { return isRunning; }
     public boolean isPaused()  { return isPaused;  }
@@ -187,18 +229,15 @@ public class SimulationManager {
         return currentLightPhases.getOrDefault(direction, LightPhase.RED);
     }
 
-    /* ------------------ MOD BAŞLATICILAR ------------------ */
-
     public void startAutoMode() {
         isAutoMode = true;
-
         Map<Direction, Integer> randomCounts = new HashMap<>();
         Random rand = new Random();
-        for (Direction dir : Direction.values()) randomCounts.put(dir, rand.nextInt(30));
-
+        for (Direction dir : Direction.values()) {
+            randomCounts.put(dir, rand.nextInt(30));
+        }
         trafficController.setVehicleCounts(randomCounts);
         trafficController.updateDurations();
-
         timerDisplay.labelDisplayBaslangic(trafficController);
         startSimulation();
     }
@@ -207,7 +246,6 @@ public class SimulationManager {
         isAutoMode = false;
         trafficController.setVehicleCounts(manualCounts);
         trafficController.updateDurations();
-
         timerDisplay.labelDisplayBaslangic(trafficController);
         startSimulation();
     }
