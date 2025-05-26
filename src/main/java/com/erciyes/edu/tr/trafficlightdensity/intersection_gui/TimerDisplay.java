@@ -7,14 +7,12 @@ import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
 //Işık fazlarının geri sayımını sayısal olarak gösterir.
 public class TimerDisplay {
     private final UserInterfaceController userInterfaceController;
-    private final SimulationManager simulationManager;
 
 
     private Direction currentDirectionForLabelUpdate;
 
     public TimerDisplay(UserInterfaceController userInterfaceController, SimulationManager simulationManager) {
         this.userInterfaceController = userInterfaceController;
-        this.simulationManager = simulationManager;
 
         simulationManager.setOnTick(kalanSure -> {
             if (this.currentDirectionForLabelUpdate != null) {
@@ -29,9 +27,6 @@ public class TimerDisplay {
             if (direction == null) { // Simülasyon durduysa veya hata varsa
                 resetTimerLabels();
             }
-            // Işık renklerini de güncellemek için (Yeşil, Sarı, Kırmızı gösterimi)
-            // burada her bir label'ın rengini de SimulationManager'dan alacağımız
-            // LightPhase bilgisine göre ayarlayabiliriz. Bu kısım eklenmedi.
         });
     }
 

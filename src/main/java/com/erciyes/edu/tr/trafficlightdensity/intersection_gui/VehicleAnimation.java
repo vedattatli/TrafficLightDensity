@@ -7,6 +7,7 @@ import com.erciyes.edu.tr.trafficlightdensity.road_objects.Vehicle;
 import javafx.animation.AnimationTimer;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 
 import java.util.*;
@@ -16,22 +17,9 @@ import java.util.*;
     değerler tanımlanır.  */
 public final class VehicleAnimation {
 
-    /* Kavşak merkez koordinatları (sahnede sabit). */
-    private static final double CENTER_X   = 545.5;
-    private static final double CENTER_Y   = 250.0;
-
-    /* Kuyruk başlangıç ofseti: İlk araç merkezden ne kadar uzakta dursun? */
-    private static final double QUEUE_OFFSET = 200.0;
-
-    /* Şerit merkezine sağ–sol ofset: Araç genişliğinin %75’i. */
-    private static final double LANE_OFFSET  = Vehicle.DEFAULT_WIDTH * 0.75;
-
     /* Araçlar arası boşluk: 1 araç boyu + 2 araç genişliği (tampon mesafe). */
     private static final double GAP_BETWEEN  =
             Vehicle.DEFAULT_LENGTH + Vehicle.DEFAULT_WIDTH * 2.0;
-
-    /* Sensör (görünmez dikdörtgen) kalınlığı – çarpışma tespiti için. */
-    private static final double SENSOR_THICKNESS = 2.0;
 
     /* ─────────────────────────── Fields ──────────────────────────────── */
     /* Her yön (N,E,S,W) için bağlı araç listesi tutulur. */
@@ -45,7 +33,10 @@ public final class VehicleAnimation {
     private boolean active = false;
 
     /* Dört görünmez sensör (kavşak giriş çizgileri). */
-    private Rectangle sensorNorth, sensorSouth, sensorEast, sensorWest;
+    private Circle sensorNorth;
+    private Circle sensorSouth;
+    private Circle sensorEast;
+    private Circle sensorWest;
 
     /* ───────────────────────── Constructor ──────────────────────────── */
     public VehicleAnimation(SimulationManager simManager) {
@@ -103,35 +94,26 @@ public final class VehicleAnimation {
     private void addSensors() {
         if (sensorNorth != null) return;   // Zaten eklendi
 
-        double laneWidth = Vehicle.DEFAULT_WIDTH * 3;
 
-        sensorNorth = createSensor(CENTER_X - laneWidth/2,
-                CENTER_Y - SENSOR_THICKNESS/2,
-                laneWidth, SENSOR_THICKNESS);
+        sensorNorth = createSensor(637,313,7);
 
-        sensorSouth = createSensor(CENTER_X - laneWidth/2,
-                CENTER_Y + SENSOR_THICKNESS/2,
-                laneWidth, SENSOR_THICKNESS);
+        sensorSouth = createSensor(550,100,7);
 
-        sensorEast  = createSensor(CENTER_X - SENSOR_THICKNESS/2,
-                CENTER_Y - laneWidth/2,
-                SENSOR_THICKNESS, laneWidth);
+        sensorEast  = createSensor(459,255,7);
 
-        sensorWest  = createSensor(CENTER_X + SENSOR_THICKNESS/2,
-                CENTER_Y - laneWidth/2,
-                SENSOR_THICKNESS, laneWidth);
+        sensorWest  = createSensor(700,180,7);
 
         canvas.getChildren().addAll(sensorNorth, sensorSouth, sensorEast, sensorWest);
     }
 
-    /** Şeffaf sensör dikdörtgeni oluşturur. */
-    private Rectangle createSensor(double x, double y, double w, double h) {
-        Rectangle r = new Rectangle(w, h);
-        r.setFill(Color.TRANSPARENT);
-        r.setLayoutX(x);
-        r.setLayoutY(y);
-        r.setMouseTransparent(true);   // Fare olaylarını bloklamasın
-        return r;
+    /** Şeffaf sensör circle oluşturur. */
+    private Circle createSensor(double x, double y, double r) {
+        Circle circle = new Circle(r);
+        circle.setFill(Color.TRANSPARENT);
+        circle.setLayoutX(x);
+        circle.setLayoutY(y);
+        circle.setMouseTransparent(true);   // Fare olaylarını bloklamasın
+        return circle;
     }
 
     /* ───────────────────── Queue Builders ───────────────────────────── */
@@ -143,21 +125,20 @@ public final class VehicleAnimation {
         /* İlk aracın koordinatı – şerit/geçiş yönüne göre. */
         switch (dir) {
             case NORTH -> {
-                baseX = CENTER_X + LANE_OFFSET - Vehicle.DEFAULT_WIDTH/2;
-                baseY = CENTER_Y + QUEUE_OFFSET;
+                baseX = 637;
+                baseY = 559;
             }
             case SOUTH -> {
-                baseX = CENTER_X - LANE_OFFSET - Vehicle.DEFAULT_WIDTH/2
-                        + Vehicle.DEFAULT_WIDTH;
-                baseY = CENTER_Y - QUEUE_OFFSET - Vehicle.DEFAULT_LENGTH;
+                baseX = 550;
+                baseY = -100;
             }
             case EAST -> {
-                baseX = CENTER_X - QUEUE_OFFSET - Vehicle.DEFAULT_LENGTH;
-                baseY = CENTER_Y + LANE_OFFSET - Vehicle.DEFAULT_WIDTH/2;
+                baseX = 29;
+                baseY = 255;
             }
             case WEST -> {
-                baseX = CENTER_X + QUEUE_OFFSET;
-                baseY = CENTER_Y - LANE_OFFSET - Vehicle.DEFAULT_WIDTH/2;
+                baseX = 1174;
+                baseY = 180;
             }
         }
 
@@ -194,7 +175,7 @@ public final class VehicleAnimation {
     /** Araç sensöre temas ediyorsa kavşağa girdi olarak işaretle. */
     private void checkSensorIntersection(Vehicle v) {
         if (v.isInIntersection()) return; // Zaten işaretli
-        Rectangle s = switch (v.getDirection()) {
+        Circle s = switch (v.getDirection()) {
             case NORTH -> sensorNorth;
             case SOUTH -> sensorSouth;
             case EAST  -> sensorEast;
