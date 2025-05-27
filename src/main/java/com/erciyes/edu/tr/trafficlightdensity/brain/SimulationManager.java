@@ -7,6 +7,7 @@ import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.LightPhase;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.scene.paint.Paint;
 import javafx.util.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,6 +65,10 @@ public class SimulationManager {
         }
         if (userInterfaceController != null) {
             lightColorUpdater.resetTrafficLightsColors(userInterfaceController);
+            userInterfaceController.redLightLeft.setFill(Paint.valueOf("#ff0000"));
+            userInterfaceController.redLightRight.setFill(Paint.valueOf("#ff0000"));
+            userInterfaceController.redLightUp.setFill(Paint.valueOf("#ff0000"));
+            userInterfaceController.redLightDown.setFill(Paint.valueOf("#ff0000"));
         }
         if (onPhaseInfoChange != null) {
             onPhaseInfoChange.accept(null);

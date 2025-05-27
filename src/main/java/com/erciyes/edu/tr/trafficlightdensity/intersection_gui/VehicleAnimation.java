@@ -13,9 +13,9 @@ import java.util.*;
 public final class VehicleAnimation {
 
     // Artırılmış kuyruk boşluğu: çarpışmayı önlemek için
-    private static final double GAP_BETWEEN = 60.0;
+    public static final double GAP_BETWEEN = 40.0;
 
-    private final Map<Direction, List<Vehicle>> laneVehicles = new EnumMap<>(Direction.class);
+    private static final Map<Direction, List<Vehicle>> laneVehicles = new EnumMap<>(Direction.class);
     private final SimulationManager simManager;
     private final AnimationTimer    timer;
 
@@ -101,10 +101,25 @@ public final class VehicleAnimation {
         for (int i = 0; i < count; i++) {
             double x = baseX, y = baseY;
             switch (dir) {
-                case NORTH -> y += i * GAP_BETWEEN;
-                case SOUTH -> y -= i * GAP_BETWEEN;
-                case EAST  -> x -= i * GAP_BETWEEN;
-                case WEST  -> x += i * GAP_BETWEEN;
+                case NORTH ->
+                        {
+                            y += i * GAP_BETWEEN;
+
+                        }
+                case SOUTH ->
+                        {
+                            y -= i * GAP_BETWEEN;
+
+                        }
+                case EAST  ->
+                        {
+                            x -= i * GAP_BETWEEN;
+                       }
+                case WEST  ->
+                        {
+                            x += i * GAP_BETWEEN;
+
+                        }
             }
             Vehicle v = new Vehicle(dir, x, y);
             list.add(v);
@@ -116,6 +131,7 @@ public final class VehicleAnimation {
         laneVehicles.forEach((dir, list) ->
                 list.forEach(v -> v.move(simManager.getLightPhaseForDirection(dir))));
         laneVehicles.values().forEach(list -> list.forEach(this::checkSensorIntersection));
+        laneVehicles.values().forEach(list -> list.forEach(this::checkSensorExit));
         laneVehicles.values().forEach(list -> list.removeIf(this::outOfCanvas));
     }
     /* ───────────────────── Helper Methods ─────────────────────────── */
@@ -130,6 +146,34 @@ public final class VehicleAnimation {
         };
         if (v.getView().getBoundsInParent().intersects(s.getBoundsInParent())) {
             v.markInsideIntersection();
+
+        }
+    }
+
+    /** Kavşak içindeki araç çıkış çizgisini geçtiğinde işaretle. */
+    private void checkSensorExit(Vehicle v) {
+        if (!v.isInIntersection() || v.hasPassedIntersection()) return;
+        switch (v.getDirection()) {
+            case NORTH -> {
+                if (v.getView().getLayoutY() < sensorNorth.getLayoutY() - sensorNorth.getRadius()) {
+                    v.markPassedIntersection();
+                }
+            }
+            case SOUTH -> {
+                if (v.getView().getLayoutY() > sensorSouth.getLayoutY() + sensorSouth.getRadius()) {
+                    v.markPassedIntersection();
+                }
+            }
+            case EAST -> {
+                if (v.getView().getLayoutX() > sensorEast.getLayoutX() + sensorEast.getRadius()) {
+                    v.markPassedIntersection();
+                }
+            }
+            case WEST -> {
+                if (v.getView().getLayoutX() < sensorWest.getLayoutX() - sensorWest.getRadius()) {
+                    v.markPassedIntersection();
+                }
+            }
         }
     }
 
@@ -138,8 +182,14 @@ public final class VehicleAnimation {
         if (canvas == null) return false;
         double w = canvas.getWidth(), h = canvas.getHeight();
         double x = v.getView().getLayoutX(), y = v.getView().getLayoutY();
-        boolean outside = x < -100 || x > w + 100 || y < -100 || y > h + 100;
+        boolean outside = x < -120 || x > w + 120 || y < -120 || y > h + 120;
         if (outside) canvas.getChildren().remove(v.getView());
         return outside;
+    }
+
+    public static Vehicle getFrontVehicle(Vehicle me) {
+        List<Vehicle> lane = laneVehicles.get(me.getDirection());
+        int idx = lane.indexOf(me);
+        return (idx > 0 ? lane.get(idx - 1) : null);
     }
 }

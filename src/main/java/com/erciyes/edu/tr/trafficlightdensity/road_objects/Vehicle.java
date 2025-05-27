@@ -1,8 +1,10 @@
 package com.erciyes.edu.tr.trafficlightdensity.road_objects;
 
+import com.erciyes.edu.tr.trafficlightdensity.intersection_gui.VehicleAnimation;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -15,19 +17,23 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class Vehicle {
 
-    // Sabitler
-    public static final double DEFAULT_LENGTH = 30.0; // px
-    public static final double DEFAULT_WIDTH  = 15.0; // px
-    public static final double DEFAULT_SPEED  = 2.0;  // px/kare
+    // ─────────── Sabitler ───────────
+    public static final double DEFAULT_LENGTH = 30.0; // px – boy
+    public static final double DEFAULT_WIDTH  = 15.0; // px – en
+    public static final double DEFAULT_SPEED  = 2.0;  // px/kare – sabit hız
 
-    // Alanlar
-    private final Direction direction;
-    private double x, y, speed;
-    private boolean inIntersection     = false;
-    private boolean passedIntersection = false;
-    private final Node view;
+    // ───────── Alanlar ─────────
+    private final Direction direction;   // Gidiş yönü
+    private double x;                    // Sol-üst X
+    private double y;                    // Sol-üst Y
+    private double speed;                // Anlık hız
 
-    // Yapıcı
+    private boolean inIntersection     = false; // Sensörü geçti mi?
+    private boolean passedIntersection = false; // Kavşaktan tam çıktı mı?
+
+    private final Node view;           // JavaFX görseli
+
+    // ───────── Yapıcılar ─────────
     public Vehicle(Direction direction, double startX, double startY) {
         this.direction = direction;
         this.x         = startX;
@@ -45,19 +51,23 @@ public class Vehicle {
         this.view = r;
         updateView();
     }
-    public Vehicle(String id, Direction d, double x, double y) { this(d, x, y); }
 
-    // Hareket
+    // ───────── Genel API ─────────
     public void move(LightPhase phase) {
-        final double AFTER_JUNCTION_FACTOR = 1.3;
-        final double YELLOW_FACTOR         = 1.0 / 1.5;
-        final double DECELERATION_STEP     = DEFAULT_SPEED * 0.1;
+        final double AFTER_JUNCTION_FACTOR = 1.3;           // Kavşak sonrası +%30
+        final double YELLOW_FACTOR         = 1.0 / 1.5;     // Sarı’da %33 yavaşla
+        final double DECELERATION_STEP     = DEFAULT_SPEED * 0.1; // Kademeli fren
 
+        /* 1) Kavşağı geçtikten sonra hızlan */
         if (passedIntersection) {
             speed = DEFAULT_SPEED * AFTER_JUNCTION_FACTOR;
+
+            /* 2) Sensöre kadar – ışığa bakma */
         } else if (!inIntersection) {
-            speed = DEFAULT_SPEED / 3;
-        } else {
+            speed = DEFAULT_SPEED;
+
+            /* 3) Sensördeyken – ışığa göre hareket */
+        } else{
             switch (phase) {
                 case GREEN  -> speed = DEFAULT_SPEED;
                 case YELLOW -> speed = DEFAULT_SPEED * YELLOW_FACTOR;
@@ -65,23 +75,84 @@ public class Vehicle {
             }
         }
 
+        /* Konum güncelle */
         switch (direction) {
-            case NORTH -> y -= speed;
-            case SOUTH -> y += speed;
-            case EAST  -> x += speed;
-            case WEST  -> x -= speed;
+            case NORTH -> {
+                // Öndeki aracı al
+                Vehicle front = VehicleAnimation.getFrontVehicle(this);
+                if (front != null) {
+                    double frontY = front.getView().getLayoutY();
+                    double gap     = this.y - frontY - DEFAULT_LENGTH;
+                    if (gap < VehicleAnimation.GAP_BETWEEN) {
+                        // Arada yeterli boşluk yoksa dur
+                        speed = 0;
+                        updateView();
+                        return;
+                    }
+                }
+                y -= speed;
+            }
+            case SOUTH -> {
+                Vehicle front = VehicleAnimation.getFrontVehicle(this);
+                if (front != null) {
+                    double frontY = front.getView().getLayoutY();
+                    double gap     = frontY - this.y - DEFAULT_LENGTH;
+                    if (gap < VehicleAnimation.GAP_BETWEEN) {
+                        speed = 0;
+                        updateView();
+                        return;
+                    }
+                }
+                y += speed;
+            }
+            case EAST  -> {
+                Vehicle front = VehicleAnimation.getFrontVehicle(this);
+                if (front != null) {
+                    double frontX = front.getView().getLayoutX();
+                    double gap     = frontX - this.x - DEFAULT_LENGTH;
+                    if (gap < VehicleAnimation.GAP_BETWEEN) {
+                        speed = 0;
+                        updateView();
+                        return;
+                    }
+                }
+                x += speed;
+            }
+            case WEST  -> {
+                Vehicle front = VehicleAnimation.getFrontVehicle(this);
+                if (front != null) {
+                    double frontX = this.x - (front.getView().getLayoutX() + DEFAULT_LENGTH);
+                    if (frontX < VehicleAnimation.GAP_BETWEEN) {
+                        speed = 0;
+                        updateView();
+                        return;
+                    }
+                }
+                x -= speed;
+            }
         }
         updateView();
+
     }
 
-    // Kavşak bayrakları
-    public void markInsideIntersection() { inIntersection = true; }
-    public boolean isInIntersection()      { return inIntersection; }
+    // ───────── Kavşak Bayrakları ─────────
+    /** Sensör çizgisine ilk temasında çağrılır. */
+    public void markInsideIntersection() {
+        inIntersection = true;
+    }
+    public boolean isInIntersection() {
+        return inIntersection;
+    }
 
-    public void markPassedIntersection()   { passedIntersection = true; }
-    public boolean hasPassedIntersection() { return passedIntersection; }
+    /** Kavşağın çıkışını belirleyeceğin yerde çağır. */
+    public void markPassedIntersection() {
+        passedIntersection = true;
+    }
+    public boolean hasPassedIntersection() {
+        return passedIntersection;
+    }
 
-    // Yardımcılar
+    // ───────── Yardımcılar ─────────
     private void updateView() {
         view.setLayoutX(x);
         view.setLayoutY(y);
@@ -91,7 +162,15 @@ public class Vehicle {
         return Color.hsb(h, 0.4, 0.85);
     }
 
-    // Getter
-    public Node getView()       { return view; }
-    public Direction getDirection() { return direction; }
+    // ───────── Getter ─────────
+    public Node getView() {
+        return view;
+    }
+
+    public double getX() { return x; }   // opsiyonel: konum kontrolü için
+    public double getY() { return y; }
+
+    public Direction getDirection() {
+        return direction;
+    }
 }
