@@ -230,7 +230,7 @@ public class SimulationManager {
         Map<Direction, Integer> randomCounts = new HashMap<>();
         Random rand = new Random();
         for (Direction dir : Direction.values()) {
-            randomCounts.put(dir, rand.nextInt(30));
+            randomCounts.put(dir, rand.nextInt(15));
         }
         trafficController.setVehicleCounts(randomCounts);
         trafficController.updateDurations();

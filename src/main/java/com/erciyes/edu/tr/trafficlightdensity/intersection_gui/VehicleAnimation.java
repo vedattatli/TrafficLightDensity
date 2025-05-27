@@ -182,7 +182,7 @@ public final class VehicleAnimation {
         if (canvas == null) return false;
         double w = canvas.getWidth(), h = canvas.getHeight();
         double x = v.getView().getLayoutX(), y = v.getView().getLayoutY();
-        boolean outside = x < -120 || x > w + 120 || y < -120 || y > h + 120;
+        boolean outside = x < -1000 || x > w + 1000 || y < -1000 || y > h + 1000;
         if (outside) canvas.getChildren().remove(v.getView());
         return outside;
     }
