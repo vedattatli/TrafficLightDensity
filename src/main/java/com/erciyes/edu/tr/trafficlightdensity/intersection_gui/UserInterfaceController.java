@@ -17,33 +17,31 @@ import java.util.*;
 public class UserInterfaceController {
 
     SimulationManager simulationManager;
-    TrafficController trafficController;
+    TrafficController trafficController; // Keep this for initial display logic
     TimerDisplay timerDisplay;
     VehicleAnimation vehicleAnimator;
 
-    public UserInterfaceController(SimulationManager simulationManager, TrafficController trafficController,TimerDisplay timerDisplay)
-    {
-        this.trafficController = trafficController;
-        this.simulationManager = simulationManager;
-        this.timerDisplay = timerDisplay;
-    }
-
+    // Constructor for direct instantiation if needed (e.g. from FXML if no-arg is required by FXMLLoader)
+    // However, your current setup seems to initialize it in initialize() or pass it.
+    // For FXML, a no-arg constructor is standard.
     public UserInterfaceController()
     {
-
+        // Initialization of members will happen in initialize() if they depend on FXML elements
+        // or other logic executed after FXML loading.
     }
+
 
     boolean isRandom;
     boolean simulationIsCurrentlyPaused = false;
 
     @FXML private Pane mainPane;
-//    @FXML private Button random_select_button;
-//    @FXML private Button user_input_button;
+    //    @FXML private Button random_select_button; // Assuming these are in FXML
+//    @FXML private Button user_input_button;  // Assuming these are in FXML
     @FXML private Button startButton;
     @FXML private Button pauseButton;
     @FXML private Button rerunButton;
     @FXML public Label northTimerLabel, southTimerLabel, eastTimerLabel, westTimerLabel;
-    @FXML private VBox topVBox;
+    @FXML private VBox topVBox; // Make sure this is correctly injected if used
     @FXML public Label displayNorthCarCount,displayNorthGreenTime,displayNorthRedTime,displaySouthCarCount;
     @FXML public Label displaySouthGreenTime,displaySouthRedTime,displayEastCarCount,displayEastGreenTime;
     @FXML public Label displayEastRedTime,displayWestCarCount,displayWestGreenTime,displayWestRedTime;
@@ -52,126 +50,146 @@ public class UserInterfaceController {
     @FXML public Circle redLightUp,redLightRight,redLightLeft,redLightDown;
 
 
-    private Direction currentDirectionForLabelUpdate;
+    // private Direction currentDirectionForLabelUpdate; // No longer needed here
 
-    public void initialize() {
+    @FXML
+    public void initialize() { // FXML elements are available here
         simulationManager = new SimulationManager();
-        simulationManager.setUserInterfaceController(this);
+        simulationManager.setUserInterfaceController(this); // Pass this controller to SimManager
+
         vehicleAnimator = new VehicleAnimation(simulationManager);
-        trafficController = new TrafficController();
-        this.timerDisplay = new TimerDisplay(this, simulationManager);
-        simulationManager.setTimerDisplay(this.timerDisplay);
+        trafficController = simulationManager.getTrafficController(); // Get the TC instance from SimManager
+        // to ensure consistency
 
+        this.timerDisplay = new TimerDisplay(this, simulationManager); // Pass this and SimManager
+        simulationManager.setTimerDisplay(this.timerDisplay); // Link back if SimManager needs it explicitly
 
-        topVBox.setVisible(true);
-        mainPane.setVisible(false);
-        startButton.setVisible(false);
-        pauseButton.setVisible(false);
-        rerunButton.setVisible(false);
-        timerDisplay.resetTimerLabels();
-        timerDisplay.resetLabelDisplay();
+        if (topVBox != null) topVBox.setVisible(true); // Check for null if FXML might not have it
+        if (mainPane != null) mainPane.setVisible(false);
+        if (startButton != null) startButton.setVisible(false);
+        if (pauseButton != null) pauseButton.setVisible(false);
+        if (rerunButton != null) rerunButton.setVisible(false);
+
+        timerDisplay.resetTimerLabels();    // Reset visual timers
+        timerDisplay.resetLabelDisplay();   // Reset info display table
 
         isRandom = false;
         simulationIsCurrentlyPaused = false;
-        pauseButton.setText("Pause");
+        if(pauseButton!=null) pauseButton.setText("Pause");
     }
 
     @FXML
     private void onRandomSelect(ActionEvent e) {
         isRandom = true;
-        topVBox.setVisible(false);
-        mainPane.setVisible(true);
-        startButton.setVisible(true);
-        pauseButton.setVisible(true);
-        rerunButton.setVisible(true);
-        startButton.setDisable(false);
+        if (topVBox != null) topVBox.setVisible(false);
+        if (mainPane != null) mainPane.setVisible(true);
+        if (startButton != null) { startButton.setVisible(true); startButton.setDisable(false); }
+        if (pauseButton != null) pauseButton.setVisible(true);
+        if (rerunButton != null) rerunButton.setVisible(true);
 
-
-        System.out.println("Rastgele araç sayısı modu seçildi.");
+        // System.out.println("Rastgele araç sayısı modu seçildi.");
+        System.out.println("Random vehicle count mode selected.");
     }
 
     @FXML
     private void onUserInputSelect(ActionEvent e) {
         isRandom = false;
-        trafficController.getVehicleCounts().clear();
+        // trafficController field is already linked to simulationManager's instance.
+        // We should modify the counts on that shared instance.
+        simulationManager.getTrafficController().getVehicleCounts().clear(); // Clear counts on the shared TC
 
         for (Direction yon : List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST)) {
-            TextInputDialog dialog = new TextInputDialog("5"); // Varsayılan 5 araç olsun
-            dialog.setTitle("Araç Girişi");
-            dialog.setHeaderText(yon + " yönü için araç sayısı:");
-            dialog.setContentText("Sayı:");
+            TextInputDialog dialog = new TextInputDialog("5");
+            // dialog.setTitle("Araç Girişi");
+            dialog.setTitle("Vehicle Input");
+            // dialog.setHeaderText(yon + " yönü için araç sayısı:");
+            dialog.setHeaderText("Number of vehicles for " + yon + " direction:");
+            // dialog.setContentText("Sayı:");
+            dialog.setContentText("Count:");
+
             Optional<String> sonuc = dialog.showAndWait();
+            int count = 0;
             if (sonuc.isPresent() && !sonuc.get().trim().isEmpty()) {
                 try {
-                    int sayi = Integer.parseInt(sonuc.get().trim());
-                    trafficController.getVehicleCounts().put(yon, Math.max(0, sayi));
+                    count = Integer.parseInt(sonuc.get().trim());
+                    count = Math.max(0, count); // Ensure non-negative
                 } catch (NumberFormatException ex) {
-                    trafficController.getVehicleCounts().put(yon, 0);
+                    count = 0; // Default to 0 on parse error
                 }
-            } else {
-                trafficController.getVehicleCounts().put(yon, 0);
             }
+            simulationManager.getTrafficController().getVehicleCounts().put(yon, count);
         }
-        trafficController.updateDurations();
-        timerDisplay.labelTimerBaslangic(this.trafficController);
-        timerDisplay.labelDisplayBaslangic(this.trafficController);
+        simulationManager.getTrafficController().updateDurations(); // Recalculate based on new counts
+        timerDisplay.labelTimerBaslangic(simulationManager.getTrafficController()); // Update initial timer display
+        timerDisplay.labelDisplayBaslangic(simulationManager.getTrafficController()); // Update info table
 
-        topVBox.setVisible(false);
-        mainPane.setVisible(true);
-        startButton.setVisible(true);
-        pauseButton.setVisible(true);
-        rerunButton.setVisible(true);
-        startButton.setDisable(false);
-        System.out.println("Manuel araç sayısı modu seçildi ve veriler girildi.");
+        if (topVBox != null) topVBox.setVisible(false);
+        if (mainPane != null) mainPane.setVisible(true);
+        if (startButton != null) { startButton.setVisible(true); startButton.setDisable(false); }
+        if (pauseButton != null) pauseButton.setVisible(true);
+        if (rerunButton != null) rerunButton.setVisible(true);
+
+        // System.out.println("Manuel araç sayısı modu seçildi ve veriler girildi.");
+        System.out.println("Manual vehicle count mode selected and data entered.");
     }
 
     @FXML
     private void onStartSimulation(ActionEvent e) {
-        System.out.println("Simülasyon başlatılıyor...");
+        // System.out.println("Simülasyon başlatılıyor...");
+        System.out.println("Starting simulation...");
         simulationIsCurrentlyPaused = false;
-        startButton.setDisable(true);
+        if (startButton != null) startButton.setDisable(true);
 
-        TrafficController activeTrafficController;
+
         if (isRandom) {
-            simulationManager.startAutoMode();
+            simulationManager.startAutoMode(); // This will generate counts and update TC
         } else {
-            simulationManager.startManualMode(this.trafficController.getVehicleCounts()); // Bu, trafficController'ı günceller
+            // For manual mode, counts are already set in onUserInputSelect
+            // and TC in simulationManager is already updated.
+            // We just need to ensure simulationManager uses its current TC.
+            simulationManager.startManualMode(simulationManager.getTrafficController().getVehicleCounts());
         }
-        activeTrafficController = simulationManager.getTrafficController();
-        vehicleAnimator.initializeVehicles(activeTrafficController, mainPane); // Güncel trafficController ile araçları oluştur
-        vehicleAnimator.startAnimation(); // Animasyonu başlat
+        // simulationManager.getTrafficController() now has the correct counts and durations.
+        vehicleAnimator.initializeVehicles(simulationManager.getTrafficController(), mainPane);
+        vehicleAnimator.startAnimation();
     }
 
     @FXML
     private void onPauseSimulation(ActionEvent e) {
         if (!simulationManager.isRunning()) {
-            System.out.println("Pause: Simülasyon çalışmıyor.");
+            // System.out.println("Pause: Simülasyon çalışmıyor.");
+            System.out.println("Pause: Simulation not running.");
             return;
         }
 
         if (simulationIsCurrentlyPaused) {
             simulationManager.resumeSimulation();
-            vehicleAnimator.startAnimation(); // Animasyonu da devam ettir
-            pauseButton.setText("Duraklat");
+            vehicleAnimator.startAnimation();
+            if (pauseButton != null) pauseButton.setText("Pause");
             simulationIsCurrentlyPaused = false;
         } else {
             simulationManager.pauseSimulation();
-            vehicleAnimator.stopAnimation(); // Animasyonu da duraklat (durdur)
-            pauseButton.setText("Devam et");
+            vehicleAnimator.stopAnimation();
+            if (pauseButton != null) pauseButton.setText("Resume");
             simulationIsCurrentlyPaused = true;
         }
     }
 
     @FXML
-    private void onRerunSimulation(ActionEvent e) { // Reset butonu
-        System.out.println("Simülasyon sıfırlanıyor (Reset)...");
-        simulationManager.stopSimulation(); // Beyin simülasyonunu durdur
-        vehicleAnimator.clearAllVehicles();   // Araçları ve animasyonu temizle/durdur
+    private void onRerunSimulation(ActionEvent e) {
+        // System.out.println("Simülasyon sıfırlanıyor (Reset)...");
+        System.out.println("Resetting simulation...");
+        simulationManager.stopSimulation();
+        vehicleAnimator.clearAllVehicles();
 
-        trafficController.getVehicleCounts().clear();
-        trafficController.updateDurations();
+        // trafficController instance is managed by simulationManager,
+        // re-initializing UI controller will set up a new simulationManager.
+        // Or, more cleanly, reset the state of the existing simulationManager and TC.
+        // For simplicity of this example, re-initialize() re-creates SimulationManager.
+        // A better approach might be simManager.reset() if such a method exists.
 
-        initialize(); // UI ve bayrakları başlangıç durumuna getir
+        // The initialize method re-creates SimulationManager and its TrafficController.
+        // So, vehicle counts will be empty or default.
+        initialize(); // This brings UI to initial state (selection screen)
     }
-
 }

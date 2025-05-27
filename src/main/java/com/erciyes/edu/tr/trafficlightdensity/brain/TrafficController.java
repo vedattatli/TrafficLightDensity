@@ -2,14 +2,21 @@ package com.erciyes.edu.tr.trafficlightdensity.brain;
 
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 // Sensörlerden gelen yoğunluk verisiyle her yöne yeşil süresi hesaplar.
 public class TrafficController {
 
-    public final static int TOTAL_CYCLE_TIME = 20;
-    public final static int YELLOW_DURATION = 2;
+    public final static int TOTAL_CYCLE_TIME = 120; // PDF'teki değere güncellendi
+    public final static int YELLOW_DURATION = 3;  // PDF'teki "e.g., 3 seconds"
+    public final static int MIN_GREEN_DURATION_IF_CARS = 10; // Araç varsa minimum yeşil süre
+    public final static int MAX_GREEN_DURATION = 60;         // Maksimum yeşil süre
 
     Map<Direction, Integer> vehicleCount;
     HashMap<Direction, Integer> greenDurations;
@@ -21,8 +28,8 @@ public class TrafficController {
      * vehicleCount ve greenDurations map'lerini başlatır.
      */
     public TrafficController() {
-        this.vehicleCount = new HashMap<>(); // vehicleCount map'ini burada başlatın
-        this.greenDurations = new HashMap<>(); // greenDurations map'ini de burada başlatın
+        this.vehicleCount = new HashMap<>();
+        this.greenDurations = new HashMap<>();
     }
 
     public int getGreenDuration(Direction direction) {
@@ -38,8 +45,8 @@ public class TrafficController {
     }
 
     public int calculateTotalVehicleCount() {
-        totalVehicleCount = 0; // yeniden hesaplamaya başlarken sıfırla
-        if (vehicleCount != null) { // vehicleCount null değilse döngüye gir
+        totalVehicleCount = 0;
+        if (vehicleCount != null) {
             for (int count : vehicleCount.values()) {
                 totalVehicleCount += count;
             }
@@ -48,22 +55,129 @@ public class TrafficController {
     }
 
     private void calculateGreenDurations() {
-        greenDurations = new HashMap<>(); // Her hesaplamada sıfırdan oluşturmak daha güvenli olabilir.
+        greenDurations = new HashMap<>();
+        Map<Direction, Integer> tempGreenDurations = new LinkedHashMap<>(); // Sırayı korumak için
 
-        if (totalVehicleCount == 0 || vehicleCount == null || vehicleCount.isEmpty()) { // vehicleCount null veya boş ise kontrol et
-            // Eğer vehicleCount başlangıçta boşsa (örneğin rastgele mod için henüz set edilmediyse)
-            // ve kullanıcı girişiyle de doldurulmadıysa, tüm yönlere 0 süresi ata.
-            // Bu durum, Direction.values() kullanılarak tüm olası yönler için yapılabilir.
-            for (Direction direction : Direction.values()) { // Enum'daki tüm yönler için
-                greenDurations.put(direction, 0);
+        if (vehicleCount == null || vehicleCount.isEmpty() || totalVehicleCount == 0) {
+            for (Direction direction : Direction.values()) {
+                tempGreenDurations.put(direction, 0); // Araç yoksa veya toplam araç 0 ise tümüne 0
             }
+            this.greenDurations.putAll(tempGreenDurations);
             return;
         }
 
-        for (Direction direction : vehicleCount.keySet()) {
-            int count = vehicleCount.getOrDefault(direction, 0); // NullPointer'dan kaçınmak için getOrDefault
-            int duration = (int) ((count / (double) totalVehicleCount) * (TOTAL_CYCLE_TIME - 4 * YELLOW_DURATION));
-            greenDurations.put(direction, duration);
+        double availableGreenTimePool = TOTAL_CYCLE_TIME - (Direction.values().length * YELLOW_DURATION);
+        if (availableGreenTimePool < 0) availableGreenTimePool = 0;
+
+        long sumOfProportionalGreenTimes = 0;
+        for (Direction dir : Direction.values()) {
+            int count = vehicleCount.getOrDefault(dir, 0);
+            if (count > 0) {
+                double proportion = (double) count / totalVehicleCount;
+                int duration = (int) Math.round(proportion * availableGreenTimePool);
+                tempGreenDurations.put(dir, duration);
+                sumOfProportionalGreenTimes += duration;
+            } else {
+                tempGreenDurations.put(dir, 0);
+            }
+        }
+
+        // Adjust proportional times if their sum doesn't match the available pool
+        if (sumOfProportionalGreenTimes > 0 && sumOfProportionalGreenTimes != availableGreenTimePool) {
+            for (Direction dir : tempGreenDurations.keySet()) {
+                if (tempGreenDurations.get(dir) > 0) { // Only adjust if it had some time
+                    tempGreenDurations.put(dir, (int) Math.round(tempGreenDurations.get(dir) * (availableGreenTimePool / sumOfProportionalGreenTimes)));
+                }
+            }
+        }
+
+
+        // Apply min/max constraints and adjust
+        List<Direction> directionsWithCars = new ArrayList<>();
+        for(Direction dir : Direction.values()){
+            if(vehicleCount.getOrDefault(dir,0) > 0){
+                directionsWithCars.add(dir);
+            } else {
+                greenDurations.put(dir, 0); // No cars, 0 green time
+            }
+        }
+
+        double remainingTimeAfterMins = availableGreenTimePool;
+        for(Direction dir : directionsWithCars){
+            tempGreenDurations.put(dir, Math.max(MIN_GREEN_DURATION_IF_CARS, tempGreenDurations.getOrDefault(dir,0)));
+            tempGreenDurations.put(dir, Math.min(MAX_GREEN_DURATION, tempGreenDurations.get(dir)));
+            remainingTimeAfterMins -= tempGreenDurations.get(dir); // This logic needs refinement
+        }
+
+        // A more robust way to handle min/max and proportionality:
+        // 1. Assign 0 to lanes with no cars.
+        // 2. For lanes with cars, assign MIN_GREEN_DURATION_IF_CARS.
+        // 3. Distribute remaining time proportionally, ensuring no MAX_GREEN_DURATION is exceeded.
+
+        greenDurations.clear();
+        double timeUsedByMinsAndZeros = 0;
+        int lanesRequiringMinTime = 0;
+
+        for (Direction dir : Direction.values()) {
+            if (vehicleCount.getOrDefault(dir, 0) > 0) {
+                greenDurations.put(dir, MIN_GREEN_DURATION_IF_CARS);
+                timeUsedByMinsAndZeros += MIN_GREEN_DURATION_IF_CARS;
+                lanesRequiringMinTime++;
+            } else {
+                greenDurations.put(dir, 0);
+            }
+        }
+
+        double remainingPoolForProportional = availableGreenTimePool - timeUsedByMinsAndZeros;
+
+        if (remainingPoolForProportional > 0 && lanesRequiringMinTime > 0) {
+            // Calculate "excess" vehicle count for proportional distribution above minimums
+            int effectiveTotalVehiclesForProportional = 0;
+            Map<Direction, Integer> effectiveVehicleCounts = new HashMap<>();
+            for(Direction dir : Direction.values()){
+                if(vehicleCount.getOrDefault(dir,0) > 0){
+                    // A simple way is to use original counts for proportion
+                    effectiveVehicleCounts.put(dir, vehicleCount.get(dir));
+                    effectiveTotalVehiclesForProportional += vehicleCount.get(dir);
+                }
+            }
+
+            if (effectiveTotalVehiclesForProportional > 0) {
+                for (Direction dir : effectiveVehicleCounts.keySet()) {
+                    double proportion = (double) effectiveVehicleCounts.get(dir) / effectiveTotalVehiclesForProportional;
+                    int additionalTime = (int) Math.round(proportion * remainingPoolForProportional);
+                    greenDurations.put(dir, greenDurations.get(dir) + additionalTime);
+                }
+            }
+        }
+
+        // Final check for MAX_GREEN_DURATION and sum adjustment
+        long currentTotalGreen = 0;
+        for(Direction dir : Direction.values()){
+            if(vehicleCount.getOrDefault(dir,0) > 0){
+                greenDurations.put(dir, Math.min(MAX_GREEN_DURATION, greenDurations.get(dir)));
+                greenDurations.put(dir, Math.max(MIN_GREEN_DURATION_IF_CARS, greenDurations.get(dir))); // Re-ensure min if clamping max reduced it
+            } else {
+                greenDurations.put(dir, 0);
+            }
+            currentTotalGreen += greenDurations.get(dir);
+        }
+
+        // If currentTotalGreen is not equal to availableGreenTimePool, adjust proportionally
+        // This is a complex normalization problem. The current approach prioritizes min/max.
+        // A simpler final adjustment if sum is off:
+        if (currentTotalGreen != 0 && currentTotalGreen != availableGreenTimePool && availableGreenTimePool > 0) {
+            double adjustmentFactor = availableGreenTimePool / currentTotalGreen;
+            for (Direction dir : greenDurations.keySet()) {
+                if (greenDurations.get(dir) > 0) { // Only adjust lanes that have green time
+                    int adjustedTime = (int) Math.round(greenDurations.get(dir) * adjustmentFactor);
+                    if (vehicleCount.getOrDefault(dir, 0) > 0) {
+                        adjustedTime = Math.max(MIN_GREEN_DURATION_IF_CARS, adjustedTime);
+                    }
+                    adjustedTime = Math.min(MAX_GREEN_DURATION, adjustedTime);
+                    greenDurations.put(dir, adjustedTime);
+                }
+            }
         }
     }
 

@@ -9,7 +9,10 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.scene.paint.Paint;
 import javafx.util.Duration;
+
+import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.Consumer;
@@ -18,7 +21,7 @@ public class SimulationManager {
     private UserInterfaceController userInterfaceController;
     private TimerDisplay timerDisplay;
     private final TrafficController trafficController = new TrafficController();
-    private final CycleManager cycleManager           = new CycleManager(trafficController);
+    private final CycleManager cycleManager;
     private final TrafficLightColorUpdater lightColorUpdater = new TrafficLightColorUpdater();
 
     private Timeline phaseTimeline;
@@ -26,13 +29,15 @@ public class SimulationManager {
     private boolean isRunning  = false;
     private boolean isPaused   = false;
 
-    private final Map<Direction, LightPhase> currentLightPhases = new HashMap<>();
-    private Direction currentlyActiveDirection;
+    private final Map<Direction, LightPhase> currentLightPhases = new EnumMap<>(Direction.class);
+    private Direction currentlyActiveDirection; // Başlangıçta null
+    private int timeLeftInCurrentPhaseForActiveDir;
 
-    private Consumer<Integer>   onTick;
+    private Consumer<Map<Direction, Integer>> onTickForAllDirections;
     private Consumer<Direction> onPhaseInfoChange;
 
     public SimulationManager() {
+        this.cycleManager = new CycleManager(trafficController);
         for (Direction dir : Direction.values()) {
             currentLightPhases.put(dir, LightPhase.RED);
         }
@@ -47,50 +52,59 @@ public class SimulationManager {
     public TrafficController getTrafficController() {
         return trafficController;
     }
-    public void setOnTick(Consumer<Integer> tickCallback) {
-        this.onTick = tickCallback;
+
+    public void setOnTick(Consumer<Map<Direction, Integer>> tickCallbackForAllDirections) {
+        this.onTickForAllDirections = tickCallbackForAllDirections;
     }
+
     public void setOnPhaseInfoChange(Consumer<Direction> phaseInfoCallback) {
         this.onPhaseInfoChange = phaseInfoCallback;
     }
 
+    public Map<Direction, LightPhase> getCurrentLightPhasesMap() {
+        return currentLightPhases;
+    }
+
+
     public void startSimulation() {
         isRunning = true;
         isPaused  = false;
-        cycleManager.startCycle();
+        cycleManager.startCycle(); // Sets up the first direction in cycleManager
 
-        // Başlangıçta herkes kırmızı
         for (Direction d : Direction.values()) {
             currentLightPhases.put(d, LightPhase.RED);
         }
         if (userInterfaceController != null) {
             lightColorUpdater.resetTrafficLightsColors(userInterfaceController);
-            userInterfaceController.redLightLeft.setFill(Paint.valueOf("#ff0000"));
-            userInterfaceController.redLightRight.setFill(Paint.valueOf("#ff0000"));
-            userInterfaceController.redLightUp.setFill(Paint.valueOf("#ff0000"));
-            userInterfaceController.redLightDown.setFill(Paint.valueOf("#ff0000"));
-        }
-        if (onPhaseInfoChange != null) {
-            onPhaseInfoChange.accept(null);
         }
 
-        // 4 saniye sonra ilk yeşil faza geç
-        Timeline initialRed = new Timeline(new KeyFrame(Duration.seconds(4), e -> startGreenPhase()));
+        // İlk updateAndNotifyTimers çağrısı burada, currentlyActiveDirection hala null
+        updateAndNotifyTimers();
+
+
+        Timeline initialRed = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+            if (isRunning) startGreenPhase();
+        }));
         initialRed.setCycleCount(1);
         initialRed.play();
     }
 
     private void startGreenPhase() {
-        currentlyActiveDirection = cycleManager.getCurrentDirection();
-        int greenDuration = cycleManager.getCurrentDuration();
-        System.out.println("Simülasyon başlatılıyor: " + currentlyActiveDirection + " Yeşil Fazı ile.");
+        if (!isRunning) return;
+        currentlyActiveDirection = cycleManager.getCurrentDirection(); // Şimdi atanıyor
+        if (currentlyActiveDirection == null) {
+            System.err.println("SimulationManager Error: No current direction from CycleManager. Stopping.");
+            stopSimulation();
+            return;
+        }
+        int greenDuration = trafficController.getGreenDuration(currentlyActiveDirection);
+        System.out.println("Starting simulation with: " + currentlyActiveDirection + " Green Phase, Duration: " + greenDuration + "s");
+
+
         for (Direction dir : Direction.values()) {
             currentLightPhases.put(dir,
                     (dir == currentlyActiveDirection) ? LightPhase.GREEN : LightPhase.RED
             );
-        }
-        if (onPhaseInfoChange != null) {
-            onPhaseInfoChange.accept(currentlyActiveDirection);
         }
         runPhaseTimer(greenDuration, LightPhase.GREEN);
     }
@@ -99,11 +113,9 @@ public class SimulationManager {
         if (!isRunning) return;
 
         currentLightPhases.put(currentlyActiveDirection, phaseForActiveDirection);
-        if (phaseForActiveDirection == LightPhase.GREEN || phaseForActiveDirection == LightPhase.YELLOW) {
-            for (Direction d : Direction.values()) {
-                if (d != currentlyActiveDirection) {
-                    currentLightPhases.put(d, LightPhase.RED);
-                }
+        for (Direction d : Direction.values()) {
+            if (d != currentlyActiveDirection) {
+                currentLightPhases.put(d, LightPhase.RED);
             }
         }
 
@@ -115,19 +127,17 @@ public class SimulationManager {
             phaseTimeline.stop();
         }
 
-        final int[] timeLeft = {durationSeconds};
-        if (onTick != null) {
-            onTick.accept(timeLeft[0]);
-        }
+        timeLeftInCurrentPhaseForActiveDir = durationSeconds;
+        updateAndNotifyTimers(); // currentlyActiveDirection artık null değil
+
 
         phaseTimeline = new Timeline(
                 new KeyFrame(Duration.seconds(1), e -> {
                     if (!isRunning || isPaused) return;
-                    timeLeft[0]--;
-                    if (onTick != null && timeLeft[0] >= 0) {
-                        onTick.accept(timeLeft[0]);
-                    }
-                    if (timeLeft[0] < 0) {
+                    timeLeftInCurrentPhaseForActiveDir--;
+                    updateAndNotifyTimers();
+
+                    if (timeLeftInCurrentPhaseForActiveDir < 0) {
                         handlePhaseTimerEnd(phaseForActiveDirection);
                     }
                 })
@@ -136,21 +146,109 @@ public class SimulationManager {
         phaseTimeline.play();
     }
 
+    private void updateAndNotifyTimers() {
+        if (onTickForAllDirections == null) return;
+
+        Map<Direction, Integer> remainingTimes = new EnumMap<>(Direction.class);
+        List<Direction> cycleOrder = cycleManager.getDirectionOrder();
+
+        if (!isRunning) {
+            for (Direction dir : Direction.values()) {
+                remainingTimes.put(dir, 0);
+            }
+            onTickForAllDirections.accept(remainingTimes);
+            return;
+        }
+
+        if (currentlyActiveDirection == null) {
+            // Simülasyon başlangıcı, ilk yeşil ışık öncesi (örn: 1 saniyelik tüm kırmızılar)
+            int initialAllRedDelay = 1; // startSimulation'daki Timeline gecikmesi
+            int accumulatedTimeToStartNextGreen = initialAllRedDelay;
+
+            Map<Direction, Boolean> processedDirections = new EnumMap<>(Direction.class);
+
+            for (Direction dirInCycleOrder : cycleOrder) {
+                remainingTimes.put(dirInCycleOrder, accumulatedTimeToStartNextGreen);
+                processedDirections.put(dirInCycleOrder, true);
+                // Durations must be available from TrafficController here
+                accumulatedTimeToStartNextGreen += trafficController.getGreenDuration(dirInCycleOrder);
+                accumulatedTimeToStartNextGreen += TrafficController.YELLOW_DURATION;
+            }
+            // Eğer Direction.values() cycleOrder'dan fazla yön içeriyorsa (olmamalı)
+            for(Direction d : Direction.values()){
+                if(!processedDirections.containsKey(d)){
+                    remainingTimes.put(d, accumulatedTimeToStartNextGreen); // Veya bir hata/varsayılan değer
+                }
+            }
+
+        } else { // Normal operasyon, bir yön aktif (Yeşil veya Sarı)
+            int cycleOrderIndexCurrent = cycleOrder.indexOf(currentlyActiveDirection);
+
+            if (cycleOrderIndexCurrent == -1) { // Güvenlik kontrolü
+                System.err.println("Error: currentlyActiveDirection ("+currentlyActiveDirection+") not found in cycleOrder. Resetting timers.");
+                for (Direction dir : Direction.values()) {
+                    remainingTimes.put(dir, 0);
+                }
+                onTickForAllDirections.accept(remainingTimes);
+                return;
+            }
+
+            for (Direction dirToCalc : Direction.values()) {
+                if (dirToCalc == currentlyActiveDirection) {
+                    remainingTimes.put(dirToCalc, Math.max(0, timeLeftInCurrentPhaseForActiveDir));
+                } else { // dirToCalc için Kırmızı Işık zamanı hesapla
+                    int timeUntilNextGreenForRedDir = 0;
+                    timeUntilNextGreenForRedDir += Math.max(0, timeLeftInCurrentPhaseForActiveDir);
+
+                    if (currentLightPhases.get(currentlyActiveDirection) == LightPhase.GREEN) {
+                        timeUntilNextGreenForRedDir += TrafficController.YELLOW_DURATION;
+                    }
+
+                    for (int i = 1; i <= cycleOrder.size(); i++) {
+                        int nextConsideredIndex = (cycleOrderIndexCurrent + i) % cycleOrder.size();
+                        Direction nextDirInCycle = cycleOrder.get(nextConsideredIndex);
+
+                        if (nextDirInCycle == dirToCalc) {
+                            break;
+                        }
+                        timeUntilNextGreenForRedDir += trafficController.getGreenDuration(nextDirInCycle);
+                        timeUntilNextGreenForRedDir += TrafficController.YELLOW_DURATION;
+                    }
+                    remainingTimes.put(dirToCalc, timeUntilNextGreenForRedDir);
+                }
+            }
+        }
+        onTickForAllDirections.accept(remainingTimes);
+    }
+
+    private int calculateTotalRedForDir(Direction targetDir) { // Bu metod artık ana zamanlayıcı için kullanılmıyor
+        if (cycleManager == null || trafficController == null || !trafficController.getVehicleCounts().containsKey(targetDir) ) return 0;
+        int totalRed = 0;
+        List<Direction> order = cycleManager.getDirectionOrder();
+        if(order == null || order.isEmpty()) return 0;
+
+        for (Direction d : order) {
+            if (d != targetDir) {
+                totalRed += trafficController.getGreenDuration(d);
+                totalRed += TrafficController.YELLOW_DURATION;
+            }
+        }
+        return totalRed;
+    }
+
+
     private void handlePhaseTimerEnd(LightPhase finishedPhase) {
         if (!isRunning) return;
 
         if (finishedPhase == LightPhase.GREEN) {
-            System.out.println(currentlyActiveDirection + " için Sarı Faz başlıyor.");
-            if (userInterfaceController != null) {
-                lightColorUpdater.updateTrafficLightsColors(currentLightPhases, userInterfaceController);
-            }
+            System.out.println(currentlyActiveDirection + " Yellow Phase starting.");
             runPhaseTimer(
-                    (int) LightPhase.getDefaultPhaseDuration(LightPhase.YELLOW).getSeconds(),
+                    TrafficController.YELLOW_DURATION,
                     LightPhase.YELLOW
             );
         }
         else if (finishedPhase == LightPhase.YELLOW) {
-            System.out.println(currentlyActiveDirection + " için Kırmızı Faz başlıyor.");
+            System.out.println(currentlyActiveDirection + " Red Phase starting.");
             currentLightPhases.put(currentlyActiveDirection, LightPhase.RED);
             processNextInCycle();
         }
@@ -158,37 +256,49 @@ public class SimulationManager {
 
     private void processNextInCycle() {
         if (!isRunning) return;
+
+        // isEndOfCycle() aktif yönün döngünün sonuncusu olup olmadığını kontrol eder.
+        // Eğer manuel moddaysak ve döngünün sonuna geldiysek dur.
         if (!isAutoMode && cycleManager.isEndOfCycle()) {
-            System.out.println("Manuel mod: Tam döngü tamamlandı. Simülasyon durduruluyor.");
+            System.out.println("Manual mode: Full cycle completed. Simulation stopping.");
             stopSimulation();
-            if (onPhaseInfoChange != null) onPhaseInfoChange.accept(null);
-            if (onTick != null) onTick.accept(0);
+            updateAndNotifyTimers();
             return;
         }
+
         cycleManager.switchToNextDirection();
         currentlyActiveDirection = cycleManager.getCurrentDirection();
+
         if (currentlyActiveDirection == null) {
-            System.err.println("SimulationManager Hata: Bir sonraki yön null. Simülasyon durduruluyor.");
+            System.err.println("SimulationManager Error: Next direction is null. Simulation stopping.");
             stopSimulation();
             return;
         }
-        int nextGreenDuration = cycleManager.getCurrentDuration();
-        System.out.println("Sıradaki Yeşil Faz: " + currentlyActiveDirection + ", Süre: " + nextGreenDuration + "sn");
+
+        int nextGreenDuration = trafficController.getGreenDuration(currentlyActiveDirection);
+        System.out.println("Next Green Phase: " + currentlyActiveDirection + ", Duration: " + nextGreenDuration + "s");
+
         for (Direction dir : Direction.values()) {
             currentLightPhases.put(dir,
                     (dir == currentlyActiveDirection) ? LightPhase.GREEN : LightPhase.RED
             );
         }
-        if (onPhaseInfoChange != null) {
-            onPhaseInfoChange.accept(currentlyActiveDirection);
-        }
         runPhaseTimer(nextGreenDuration, LightPhase.GREEN);
+    }
+
+    private Map<Direction, Integer> createZeroTimesMap() {
+        Map<Direction, Integer> zeroTimes = new EnumMap<>(Direction.class);
+        for (Direction d : Direction.values()) {
+            zeroTimes.put(d, 0);
+        }
+        return zeroTimes;
     }
 
     public void stopSimulation() {
         if (!isRunning && !isPaused) return;
         isRunning = false;
         isPaused  = false;
+
         if (phaseTimeline != null) {
             phaseTimeline.stop();
             phaseTimeline = null;
@@ -196,17 +306,24 @@ public class SimulationManager {
         for (Direction dir : Direction.values()) {
             currentLightPhases.put(dir, LightPhase.RED);
         }
-        currentlyActiveDirection = null;
-        System.out.println("Simülasyon durduruldu.");
-        if (onPhaseInfoChange != null) onPhaseInfoChange.accept(null);
-        if (onTick != null) onTick.accept(0);
+        if (userInterfaceController != null) {
+            lightColorUpdater.updateTrafficLightsColors(currentLightPhases, userInterfaceController);
+        }
+        // currentlyActiveDirection'ı null yapmadan önce son bir kez timer'ları sıfırla
+        // ya da updateAndNotifyTimers içindeki !isRunning kontrolüne güven
+        Direction oldActive = currentlyActiveDirection; // Sakla
+        currentlyActiveDirection = null; // Şimdi null yap
+        timeLeftInCurrentPhaseForActiveDir = 0;
+        System.out.println("Simulation stopped.");
+        updateAndNotifyTimers(); // Bu çağrı !isRunning bloğuna girecek ve 0'ları gönderecek
+        currentlyActiveDirection = oldActive; // Sadece bir anlık, aslında gerek yok çünkü zaten durdu
     }
 
     public void pauseSimulation() {
         if (isRunning && !isPaused) {
             isPaused = true;
             if (phaseTimeline != null) phaseTimeline.pause();
-            System.out.println("Simülasyon duraklatıldı.");
+            System.out.println("Simulation paused.");
         }
     }
 
@@ -214,7 +331,7 @@ public class SimulationManager {
         if (isRunning && isPaused) {
             isPaused = false;
             if (phaseTimeline != null) phaseTimeline.play();
-            System.out.println("Simülasyon devam ettiriliyor.");
+            System.out.println("Simulation resuming.");
         }
     }
 
@@ -230,11 +347,11 @@ public class SimulationManager {
         Map<Direction, Integer> randomCounts = new HashMap<>();
         Random rand = new Random();
         for (Direction dir : Direction.values()) {
-            randomCounts.put(dir, rand.nextInt(15));
+            randomCounts.put(dir, rand.nextInt(15) +1);
         }
         trafficController.setVehicleCounts(randomCounts);
         trafficController.updateDurations();
-        timerDisplay.labelDisplayBaslangic(trafficController);
+        if(timerDisplay != null) timerDisplay.labelDisplayBaslangic(trafficController);
         startSimulation();
     }
 
@@ -242,7 +359,7 @@ public class SimulationManager {
         isAutoMode = false;
         trafficController.setVehicleCounts(manualCounts);
         trafficController.updateDurations();
-        timerDisplay.labelDisplayBaslangic(trafficController);
+        if(timerDisplay != null) timerDisplay.labelDisplayBaslangic(trafficController);
         startSimulation();
     }
 }
