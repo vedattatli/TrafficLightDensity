@@ -25,12 +25,8 @@ public class CycleManager {
             activeDirection = directionOrder.get(currentIndex);
         } else {
             activeDirection = null;
-            // System.err.println("CycleManager Error: Direction order is empty!");
             System.err.println("CycleManager Error: Direction order is empty!");
         }
-        // System.out.println("Döngü başlatıldı. İlk yön: " +
-        //         (activeDirection != null ? activeDirection: "YOK") +
-        //         ", Süre: " + getCurrentDuration() + "sn");
         System.out.println("Cycle started. First direction: " +
                 (activeDirection != null ? activeDirection: "NONE") +
                 ", Duration: " + getCurrentDuration() + "s");
@@ -38,8 +34,6 @@ public class CycleManager {
 
     public void switchToNextDirection() {
         if (directionOrder.isEmpty()) {
-            // System.err.println("CycleManager Error: Cannot switch direction, order is empty!");
-            System.err.println("CycleManager Error: Cannot switch direction, order is empty!");
             return;
         }
         currentIndex = (currentIndex + 1) % directionOrder.size();
@@ -55,15 +49,6 @@ public class CycleManager {
             return 0;
         }
         return trafficController.getGreenDuration(activeDirection);
-    }
-
-    public boolean hasRemainingVehicle() {
-        if (trafficController == null || trafficController.getVehicleCounts() == null || activeDirection == null) {
-            return false;
-        }
-        Map<Direction, Integer> vehicleCounts = trafficController.getVehicleCounts();
-        Integer count = vehicleCounts.get(activeDirection);
-        return count != null && count > 0;
     }
 
     public boolean isEndOfCycle() {

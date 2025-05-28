@@ -3,7 +3,6 @@ package com.erciyes.edu.tr.trafficlightdensity.intersection_gui;
 import com.erciyes.edu.tr.trafficlightdensity.brain.SimulationManager;
 import com.erciyes.edu.tr.trafficlightdensity.brain.TrafficController;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
-import com.erciyes.edu.tr.trafficlightdensity.road_objects.LightPhase; // Import LightPhase
 
 import java.util.Map; // Import Map
 
@@ -19,22 +18,9 @@ public class TimerDisplay {
         this.userInterfaceController = userInterfaceController;
         this.simulationManager = simulationManager; // Store simulationManager
 
-        // The old onTick and onPhaseInfoChange are replaced by a single callback
-        // that provides all necessary info for all timers.
         simulationManager.setOnTick(remainingTimesMap -> {
-            // This map contains the time left for each direction
-            // If a direction is GREEN or YELLOW, it's the time left in that phase.
-            // If a direction is RED, it's the time until it turns GREEN/YELLOW again.
             updateAllTimerLabels(remainingTimesMap);
         });
-
-        // No longer needed as onTick handles all updates
-        // simulationManager.setOnPhaseInfoChange(direction -> {
-        //     this.currentDirectionForLabelUpdate = direction;
-        //     if (direction == null) {
-        //         resetTimerLabels();
-        //     }
-        // });
     }
 
     public void labelTimerBaslangic(TrafficController trafficController) {
@@ -126,23 +112,19 @@ public class TimerDisplay {
     }
 
 
-    // This method is no longer called directly by SimulationManager's onTick.
-    // updateAllTimerLabels is used instead.
-    public void labelTrafficLightPerSecond(Direction aktifYon, int sure) {
-        // This was the old way, keeping it for reference or if needed by other parts,
-        // but onTick callback to updateAllTimerLabels is the new primary mechanism.
-        // resetTimerLabels(); // Resetting all might cause flickering if only one is changing
-        if (aktifYon == null) {
-            resetTimerLabels(); // If no active direction (e.g. sim stopped), reset all.
-            return;
-        }
-
-        String sureText = (sure >= 0 ? sure : "0") + "s"; // use "s"
-        switch (aktifYon) {
-            case NORTH -> userInterfaceController.northTimerLabel.setText(sureText);
-            case SOUTH -> userInterfaceController.southTimerLabel.setText(sureText);
-            case EAST  -> userInterfaceController.eastTimerLabel.setText(sureText);
-            case WEST  -> userInterfaceController.westTimerLabel.setText(sureText);
-        }
-    }
+//    public void labelTrafficLightPerSecond(Direction aktifYon, int sure) {
+//
+//        if (aktifYon == null) {
+//            resetTimerLabels(); // If no active direction (e.g. sim stopped), reset all.
+//            return;
+//        }
+//
+//        String sureText = (sure >= 0 ? sure : "0") + "s"; // use "s"
+//        switch (aktifYon) {
+//            case NORTH -> userInterfaceController.northTimerLabel.setText(sureText);
+//            case SOUTH -> userInterfaceController.southTimerLabel.setText(sureText);
+//            case EAST  -> userInterfaceController.eastTimerLabel.setText(sureText);
+//            case WEST  -> userInterfaceController.westTimerLabel.setText(sureText);
+//        }
+//    }
 }

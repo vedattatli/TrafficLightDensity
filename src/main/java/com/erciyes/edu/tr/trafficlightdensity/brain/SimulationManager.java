@@ -221,21 +221,6 @@ public class SimulationManager {
         onTickForAllDirections.accept(remainingTimes);
     }
 
-    private int calculateTotalRedForDir(Direction targetDir) { // Bu metod artık ana zamanlayıcı için kullanılmıyor
-        if (cycleManager == null || trafficController == null || !trafficController.getVehicleCounts().containsKey(targetDir) ) return 0;
-        int totalRed = 0;
-        List<Direction> order = cycleManager.getDirectionOrder();
-        if(order == null || order.isEmpty()) return 0;
-
-        for (Direction d : order) {
-            if (d != targetDir) {
-                totalRed += trafficController.getGreenDuration(d);
-                totalRed += TrafficController.YELLOW_DURATION;
-            }
-        }
-        return totalRed;
-    }
-
 
     private void handlePhaseTimerEnd(LightPhase finishedPhase) {
         if (!isRunning) return;
@@ -284,14 +269,6 @@ public class SimulationManager {
             );
         }
         runPhaseTimer(nextGreenDuration, LightPhase.GREEN);
-    }
-
-    private Map<Direction, Integer> createZeroTimesMap() {
-        Map<Direction, Integer> zeroTimes = new EnumMap<>(Direction.class);
-        for (Direction d : Direction.values()) {
-            zeroTimes.put(d, 0);
-        }
-        return zeroTimes;
     }
 
     public void stopSimulation() {
