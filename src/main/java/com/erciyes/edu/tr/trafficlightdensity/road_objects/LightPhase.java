@@ -12,15 +12,4 @@ public enum LightPhase {
     GREEN,
     YELLOW,
     RED;
-
-    public Duration getDuration() {
-        return getDuration();
-    }
-
-    public static Duration getDefaultPhaseDuration(LightPhase phase) {
-        return switch (phase) {
-            case YELLOW -> Duration.ofSeconds(TrafficController.YELLOW_DURATION); // sabit
-            case RED, GREEN -> Duration.ofSeconds(0); // dışarıdan atanacak
-        };
-    }
 }

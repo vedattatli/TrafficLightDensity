@@ -8,7 +8,7 @@ import javafx.scene.shape.Rectangle;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Basit araç sınıfı.
+ * Basit araç .
  * <ul>
  *   <li>Sensöre (stop çizgisi) kadar ışığa bakmadan sabit hızla ilerler.</li>
  *   <li>Sensördeyken ışığa göre durur / yavaşlar / geçer.</li>
@@ -18,9 +18,9 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Vehicle {
 
     // ─────────── Sabitler ───────────
-    public static final double DEFAULT_LENGTH = 30.0; // px – boy
-    public static final double DEFAULT_WIDTH  = 15.0; // px – en
-    public static final double DEFAULT_SPEED  = 2.0;  // px/kare – sabit hız
+    public static final double DEFAULT_LENGTH = 30.0;
+    public static final double DEFAULT_WIDTH  = 15.0;
+    public static final double DEFAULT_SPEED  = 2.0;
 
     // ───────── Alanlar ─────────
     private final Direction direction;   // Gidiş yönü
@@ -31,7 +31,7 @@ public class Vehicle {
     private boolean inIntersection     = false; // Sensörü geçti mi?
     private boolean passedIntersection = false; // Kavşaktan tam çıktı mı?
 
-    private final Node view;           // JavaFX görseli
+    private final Node view;
 
     // ───────── Yapıcılar ─────────
     public Vehicle(Direction direction, double startX, double startY) {
@@ -52,7 +52,7 @@ public class Vehicle {
         updateView();
     }
 
-    // ───────── Genel API ─────────
+
     public void move(LightPhase phase) {
         final double AFTER_JUNCTION_FACTOR = 1.3;           // Kavşak sonrası +%30
         final double YELLOW_FACTOR         = 1.0 / 1.5;     // Sarı’da %33 yavaşla
@@ -135,7 +135,6 @@ public class Vehicle {
 
     }
 
-    // ───────── Kavşak Bayrakları ─────────
     /** Sensör çizgisine ilk temasında çağrılır. */
     public void markInsideIntersection() {
         inIntersection = true;
@@ -152,7 +151,7 @@ public class Vehicle {
         return passedIntersection;
     }
 
-    // ───────── Yardımcılar ─────────
+
     private void updateView() {
         view.setLayoutX(x);
         view.setLayoutY(y);
@@ -162,13 +161,9 @@ public class Vehicle {
         return Color.hsb(h, 0.4, 0.85);
     }
 
-    // ───────── Getter ─────────
     public Node getView() {
         return view;
     }
-
-    public double getX() { return x; }   // opsiyonel: konum kontrolü için
-    public double getY() { return y; }
 
     public Direction getDirection() {
         return direction;

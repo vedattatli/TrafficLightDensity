@@ -20,7 +20,7 @@ public class TrafficLightColorUpdater {
     private final Color activeYellowColor  = Color.web("#e0ff0d");
     private final Color activeRedColor     = Color.web("#ff0000");
 
-    /** Tüm lambaları varsayılan renklere döndürür. */
+
     public void resetTrafficLightsColors(UserInterfaceController ui) {
         ui.yellowLightUp.setFill(defaultYellowColor);
         ui.yellowLightDown.setFill(defaultYellowColor);
@@ -38,13 +38,11 @@ public class TrafficLightColorUpdater {
         ui.greenLightRight.setFill(defaultGreenColor);
     }
 
-    /** Haritadaki HER yön–faz ikilisini işleyerek aktif renkleri uygular. */
     public void updateTrafficLightsColors(Map<Direction, LightPhase> currentLightPhase,
                                           UserInterfaceController ui) {
-        // Önce hepsini sıfırla
         resetTrafficLightsColors(ui);
 
-        // Ardından mevcut fazlara göre ilgili ışığı boyayalım
+
         for (Map.Entry<Direction, LightPhase> entry : currentLightPhase.entrySet()) {
             Direction direction = entry.getKey();
             LightPhase phase   = entry.getValue();

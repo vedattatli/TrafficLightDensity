@@ -4,19 +4,19 @@ import com.erciyes.edu.tr.trafficlightdensity.brain.SimulationManager;
 import com.erciyes.edu.tr.trafficlightdensity.brain.TrafficController;
 import com.erciyes.edu.tr.trafficlightdensity.road_objects.Direction;
 
-import java.util.Map; // Import Map
+import java.util.Map;
 
-//Işık fazlarının geri sayımını sayısal olarak gösterir.
+
 public class TimerDisplay {
     private final UserInterfaceController userInterfaceController;
-    private final SimulationManager simulationManager; // Keep a reference
+    private final SimulationManager simulationManager;
 
 
-    // private Direction currentDirectionForLabelUpdate; // No longer needed this way
+
 
     public TimerDisplay(UserInterfaceController userInterfaceController, SimulationManager simulationManager) {
         this.userInterfaceController = userInterfaceController;
-        this.simulationManager = simulationManager; // Store simulationManager
+        this.simulationManager = simulationManager;
 
         simulationManager.setOnTick(remainingTimesMap -> {
             updateAllTimerLabels(remainingTimesMap);
@@ -25,8 +25,6 @@ public class TimerDisplay {
 
     public void labelTimerBaslangic(TrafficController trafficController) {
         if (trafficController == null) return;
-        // This method might be less relevant now as timers are fully dynamic.
-        // It could still show initial calculated green times before simulation starts.
         updateLabel(userInterfaceController.northTimerLabel, trafficController.getGreenDuration(Direction.NORTH));
         updateLabel(userInterfaceController.eastTimerLabel, trafficController.getGreenDuration(Direction.EAST));
         updateLabel(userInterfaceController.southTimerLabel, trafficController.getGreenDuration(Direction.SOUTH));
@@ -34,7 +32,7 @@ public class TimerDisplay {
     }
 
     public void resetTimerLabels() {
-        String resetText = "0s"; // Use "0s" or "N/A" when reset or stopped
+        String resetText = "0s";
         userInterfaceController.northTimerLabel.setText(resetText);
         userInterfaceController.southTimerLabel.setText(resetText);
         userInterfaceController.eastTimerLabel.setText(resetText);
@@ -54,7 +52,7 @@ public class TimerDisplay {
 
 
     private void updateLabel(javafx.scene.control.Label label, int timeSeconds) {
-        if (timeSeconds < 0) timeSeconds = 0; // Ensure non-negative
+        if (timeSeconds < 0) timeSeconds = 0;
         label.setText(timeSeconds + "s");
     }
 
@@ -94,8 +92,7 @@ public class TimerDisplay {
         userInterfaceController.displayNorthRedTime.setText(resetText);
     }
 
-    // This calculates the total red duration for a direction in a cycle,
-    // which is still useful for the summary display table.
+
     public String calculateRedDuration(Direction direction, TrafficController tc) {
         int totalRedTime = 0;
         if (tc == null || tc.getVehicleCounts().isEmpty()) return "0";
@@ -106,25 +103,7 @@ public class TimerDisplay {
                 totalRedTime += TrafficController.YELLOW_DURATION;
             }
         }
-        // Add the yellow phase of the direction itself, as it's red during its own yellow before others go.
-        // No, this is not correct for "total red". Total red for a direction is sum of G+Y of OTHERS.
+
         return String.valueOf(totalRedTime);
     }
-
-
-//    public void labelTrafficLightPerSecond(Direction aktifYon, int sure) {
-//
-//        if (aktifYon == null) {
-//            resetTimerLabels(); // If no active direction (e.g. sim stopped), reset all.
-//            return;
-//        }
-//
-//        String sureText = (sure >= 0 ? sure : "0") + "s"; // use "s"
-//        switch (aktifYon) {
-//            case NORTH -> userInterfaceController.northTimerLabel.setText(sureText);
-//            case SOUTH -> userInterfaceController.southTimerLabel.setText(sureText);
-//            case EAST  -> userInterfaceController.eastTimerLabel.setText(sureText);
-//            case WEST  -> userInterfaceController.westTimerLabel.setText(sureText);
-//        }
-//    }
 }

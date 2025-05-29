@@ -86,8 +86,7 @@ public final class VehicleAnimation {
         return circle;
     }
 
-    /* ───────────────────── Queue Builders ───────────────────────────── */
-    /** Verilen yöne (lane) istenen adet araç ekler. */
+
 
     private void createQueueForLane(Direction dir, int count) {
         List<Vehicle> list = laneVehicles.get(dir);
@@ -134,10 +133,9 @@ public final class VehicleAnimation {
         laneVehicles.values().forEach(list -> list.forEach(this::checkSensorExit));
         laneVehicles.values().forEach(list -> list.removeIf(this::outOfCanvas));
     }
-    /* ───────────────────── Helper Methods ─────────────────────────── */
-    /** Araç sensöre temas ediyorsa kavşağa girdi olarak işaretle. */
+
     private void checkSensorIntersection(Vehicle v) {
-        if (v.isInIntersection()) return; // Zaten işaretli
+        if (v.isInIntersection()) return;
         Circle s = switch (v.getDirection()) {
             case NORTH -> sensorNorth;
             case SOUTH -> sensorSouth;

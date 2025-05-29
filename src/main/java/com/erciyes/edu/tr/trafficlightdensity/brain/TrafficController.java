@@ -13,8 +13,8 @@ import java.util.Map;
 // Sensörlerden gelen yoğunluk verisiyle her yöne yeşil süresi hesaplar.
 public class TrafficController {
 
-    public final static int TOTAL_CYCLE_TIME = 120; // PDF'teki değere güncellendi
-    public final static int YELLOW_DURATION = 3;  // PDF'teki "e.g., 3 seconds"
+    public final static int TOTAL_CYCLE_TIME = 120;
+    public final static int YELLOW_DURATION = 3;
     public final static int MIN_GREEN_DURATION_IF_CARS = 10; // Araç varsa minimum yeşil süre
     public final static int MAX_GREEN_DURATION = 60;         // Maksimum yeşil süre
 
@@ -23,10 +23,7 @@ public class TrafficController {
 
     private int totalVehicleCount;
 
-    /**
-     * TrafficController constructor.
-     * vehicleCount ve greenDurations map'lerini başlatır.
-     */
+
     public TrafficController() {
         this.vehicleCount = new HashMap<>();
         this.greenDurations = new HashMap<>();
@@ -82,7 +79,7 @@ public class TrafficController {
             }
         }
 
-        // Adjust proportional times if their sum doesn't match the available pool
+
         if (sumOfProportionalGreenTimes > 0 && sumOfProportionalGreenTimes != availableGreenTimePool) {
             for (Direction dir : tempGreenDurations.keySet()) {
                 if (tempGreenDurations.get(dir) > 0) { // Only adjust if it had some time
@@ -92,7 +89,7 @@ public class TrafficController {
         }
 
 
-        // Apply min/max constraints and adjust
+
         List<Direction> directionsWithCars = new ArrayList<>();
         for(Direction dir : Direction.values()){
             if(vehicleCount.getOrDefault(dir,0) > 0){
@@ -109,10 +106,7 @@ public class TrafficController {
             remainingTimeAfterMins -= tempGreenDurations.get(dir); // This logic needs refinement
         }
 
-        // A more robust way to handle min/max and proportionality:
-        // 1. Assign 0 to lanes with no cars.
-        // 2. For lanes with cars, assign MIN_GREEN_DURATION_IF_CARS.
-        // 3. Distribute remaining time proportionally, ensuring no MAX_GREEN_DURATION is exceeded.
+
 
         greenDurations.clear();
         double timeUsedByMinsAndZeros = 0;
@@ -131,12 +125,12 @@ public class TrafficController {
         double remainingPoolForProportional = availableGreenTimePool - timeUsedByMinsAndZeros;
 
         if (remainingPoolForProportional > 0 && lanesRequiringMinTime > 0) {
-            // Calculate "excess" vehicle count for proportional distribution above minimums
+
             int effectiveTotalVehiclesForProportional = 0;
             Map<Direction, Integer> effectiveVehicleCounts = new HashMap<>();
             for(Direction dir : Direction.values()){
                 if(vehicleCount.getOrDefault(dir,0) > 0){
-                    // A simple way is to use original counts for proportion
+
                     effectiveVehicleCounts.put(dir, vehicleCount.get(dir));
                     effectiveTotalVehiclesForProportional += vehicleCount.get(dir);
                 }
@@ -151,7 +145,7 @@ public class TrafficController {
             }
         }
 
-        // Final check for MAX_GREEN_DURATION and sum adjustment
+
         long currentTotalGreen = 0;
         for(Direction dir : Direction.values()){
             if(vehicleCount.getOrDefault(dir,0) > 0){
@@ -163,9 +157,6 @@ public class TrafficController {
             currentTotalGreen += greenDurations.get(dir);
         }
 
-        // If currentTotalGreen is not equal to availableGreenTimePool, adjust proportionally
-        // This is a complex normalization problem. The current approach prioritizes min/max.
-        // A simpler final adjustment if sum is off:
         if (currentTotalGreen != 0 && currentTotalGreen != availableGreenTimePool && availableGreenTimePool > 0) {
             double adjustmentFactor = availableGreenTimePool / currentTotalGreen;
             for (Direction dir : greenDurations.keySet()) {
