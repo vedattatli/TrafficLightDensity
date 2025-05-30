@@ -59,7 +59,7 @@ public final class VehicleAnimation {
         sensorNorth = sensorSouth = sensorEast = sensorWest = null;
     }
 
-    /* ───────────────────── Sensor Helpers ───────────────────────────── */
+    /* ------------------- Sensor Helpers ─----------------------------- */
     /** Dört görünmez sensör dikdörtgenini kavşak merkezine yerleştirir. */
     private void addSensors() {
         if (sensorNorth != null) return;   // Zaten eklendi
